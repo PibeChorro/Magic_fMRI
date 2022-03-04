@@ -1,0 +1,10 @@
+.*
+~*
+.png
+.jpg
+.jpeg
+.JPG
+.JPEG
+
+.so
+!/.gitignore
