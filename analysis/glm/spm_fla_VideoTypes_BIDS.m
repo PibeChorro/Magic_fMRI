@@ -36,10 +36,11 @@ clear all; % first clear all variables, so we don't have any intervening variabl
 tic; % start script.
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "rawdata")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    =  uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -84,7 +85,7 @@ softwareName        = 'spm12';              % software used to create preprocess
 analysisPipeline    = 'spm12-fla';          % how is the folder named that contains first level results
 brainMask           = 'WholeBrain';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';         % Magic, Control and Surprise videos are one regressor each (Response as well, but that is less important)
-smoothKernelSize	= 9;                    % in mm
+smoothKernelSize	= 6;                    % in mm
 smoothKernelSpace   = 'mni';                % mni or native (mni makes more sense, native rather for explorative analysis... maybe)
 % combine above specifications for a well structured file hierarchy
 smoothnessDir       = [num2str(smoothKernelSize) 'mm-smoothed-' smoothKernelSpace 'space'];                     % Name of smoothed data directory
@@ -127,7 +128,7 @@ do.loadlog          = 1; % load LOG files!
 do.estimate         = 1;
 do.DefContrasts     = 1;
 % Which model to do
-do.wholeVideo       = 1;
+do.wholeVideo       = 0;
 do.specialMoment    = 1;
 
 
@@ -153,15 +154,15 @@ numBlocks           = 3;
 % should the movement be used as regressors of no interest
 fla.realignmentParametersFlag  = 1;
 
-for s = 7%1:length(subNames)
+for s = 1:length(subNames)
     %% Define where to look for functional MRI data and the logs that contain information about stimulus on/offsets
     smoothedDataDir     = fullfile(dataDir,         subNames{s}, 'func');
     realignedDataDir    = fullfile(realignedDir,    subNames{s}, 'func');
-    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',DICOMsubNames{s});
+    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',subNames{s});
     % Further information - number of runs and where a DICOM file can be
     % found
     runs                = cellstr(spm_select('List', smoothedDataDir, '.nii')); 
-    numRuns             = length(runs); 
+    numRuns             = 12;%length(runs); 
     sourcedataRuns      = spm_select('FPList',fullfile(sourceDir,DICOMsubNames{s},'func'), 'dir','^run*');
     sourcedataRuns      = cellstr(sourcedataRuns);
     %% load a dicom header that contains information needed for analysis
@@ -487,8 +488,11 @@ for s = 7%1:length(subNames)
             % vs pre and the other is pre vs post revelation
             'Magic PreVsPre (run 1vs2)';            ... %17
             'Magic PreVsPost (run 2vs3)';           ... %18
-            'Video vs Response';                    ... %19
-            'Response vs Video'                     ... %20
+            % Additional contrast to outrule the timeconfound by comparing
+            % Control pre vs post
+            'Control Before > Control After';       ... %19
+            'Video vs Response';                    ... %20
+            'Response vs Video'                     ... %21
             };
         
         % Contrast values
@@ -513,11 +517,14 @@ for s = 7%1:length(subNames)
         C17= repmat ([1     0       0           0           zeros(1,numRaPara)          -1      0       0           0           zeros(1,numRaPara) repmat([0       0       0           0           zeros(1,numRaPara)], 1,2)],1,numBlocks);
         %   FirstRun Magic  Control Surprise    Response    Realignment SecondRun   Magic   Control Surprise    Response    Realignment   ThirdRun  Magic   Control Surprise    Response    Realignment FourthRun   Magic   Control Surprise    Response    Realignment
         C18= repmat ([0     0       0           0           zeros(1,numRaPara)      1       0       0           0           zeros(1,numRaPara)      -1      0       0           0           zeros(1,numRaPara)      0       0       0           0       	zeros(1,numRaPara)],1,numBlocks);
+        %       PreRevelation Magic videos  Control Surprise    Response    Realignment             PostRevelation  Magic videos    Control Surprise    Response   Realignment
+        C19= repmat ([repmat([0              1      0           0           zeros(1,numRaPara)], 1,2)       repmat([0              -1       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
+
         %                       Magic No Magic    Surprise    Response    Realigment
-        C19= repmat (repmat([   1     1           1           -3          zeros(1,numRaPara)],1,4),1,numBlocks);
-        C20= repmat (repmat([   -1    -1          -1           3          zeros(1,numRaPara)],1,4),1,numBlocks);
+        C20= repmat (repmat([   1     1           1           -3          zeros(1,numRaPara)],1,4),1,numBlocks);
+        C21= repmat (repmat([   -1    -1          -1           3          zeros(1,numRaPara)],1,4),1,numBlocks);
         % Combine all Contrasts in one Matrix
-        Contrasts = [C1; C2; C3; C4; C5; C6; C7; C8; C9; C10; C11; C12; C13; C14; C15; C16; C17; C18; C19; C20];
+        Contrasts = [C1; C2; C3; C4; C5; C6; C7; C8; C9; C10; C11; C12; C13; C14; C15; C16; C17; C18; C19; C20; C21];
         
         % safety net: check if sum of contrasts is 0
         if any(sum(Contrasts,2))
