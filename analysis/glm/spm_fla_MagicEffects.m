@@ -33,13 +33,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all; % first clear all variables, so we don't have any intervening variables.
+homedir = '/home/vplikat';
 tic; % start script.
 
 %% Define important details of your file structure and location
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "rawdata")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    = uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -84,7 +85,7 @@ softwareName        = 'spm12';              % software used to create preprocess
 analysisPipeline    = 'spm12-fla';          % how is the folder named that contains first level results
 brainMask           = 'WholeBrain';         % whole brain or ROI
 conditionsAnalyzed  = 'MagicEffects';         % Magic, Control and Surprise videos are one regressor each (Response as well, but that is less important)
-smoothKernelSize	= 9;                    % in mm
+smoothKernelSize	= 6;                    % in mm
 smoothKernelSpace   = 'mni';                % mni or native (mni makes more sense, native rather for explorative analysis... maybe)
 % combine above specifications for a well structured file hierarchy
 smoothnessDir       = [num2str(smoothKernelSize) 'mm-smoothed-' smoothKernelSpace 'space'];                     % Name of smoothed data directory
@@ -161,7 +162,7 @@ for s = 1:length(subNames)
     %% Define where to look for functional MRI data and the logs that contain information about stimulus on/offsets
     smoothedDataDir     = fullfile(dataDir,         subNames{s}, 'func');
     realignedDataDir    = fullfile(realignedDir,    subNames{s}, 'func');
-    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',DICOMsubNames{s});
+    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',subNames{s});
     % Further information - number of runs and where a DICOM file can be
     % found
     runs                = cellstr(spm_select('List', smoothedDataDir, '.nii')); 

@@ -9,3 +9,5 @@
 log.txt
 __pycache__/
 !/.gitignore
+
+archive/

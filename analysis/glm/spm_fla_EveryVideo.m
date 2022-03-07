@@ -36,10 +36,11 @@ clear all; % first clear all variables, so we don't have any intervening variabl
 tic; % start script.
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "rawdata")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    = uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -143,7 +144,7 @@ for s = 1:length(subNames)
     %% Define where to look for functional MRI data and the logs that contain information about stimulus on/offsets
     smoothedDataDir     = fullfile(dataDir,         subNames{s},'func');
     realignedDataDir    = fullfile(realignedDir,    subNames{s},'func');
-    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',DICOMsubNames{s});
+    psyphysicDataDir    = fullfile(derivesDir, 'PsychoPhysic',subNames{s});
     % Further information - number of runs and where a DICOM file can be
     % found
     runs                = cellstr(spm_select('List', smoothedDataDir, '.nii')); 
