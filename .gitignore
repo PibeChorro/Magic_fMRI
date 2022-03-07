@@ -5,6 +5,7 @@
 .jpeg
 .JPG
 .JPEG
-
 .so
+log.txt
+__pycache__/
 !/.gitignore
