@@ -162,13 +162,13 @@ docker exec --workdir $SUBJECTS_DIR $FS_CONTAINER_NAME \
 	mri_vol2label \
 	--i $SUB/mri/aseg.mgz \
 	--id 15 \
-	--l $SUB/label/4th-ventricle.label
+	--l $SUB/label/3rd-ventricle.label
 
 docker exec --workdir $SUBJECTS_DIR $FS_CONTAINER_NAME \
 	mri_label2vol \
 	--temp $meanNiFTI \
-	--label $SUB/label/4th-ventricle.label \
-	--o $SUBJECTS_DIR/$SUB/corrected_ROIs/4th-ventricle.nii \
+	--label $SUB/label/3rd-ventricle.label \
+	--o $SUBJECTS_DIR/$SUB/corrected_ROIs/3rd-ventricle.nii \
 	--reg $SUBJECTS_DIR/$SUB/tkregister_${SUB}.dat
 
 docker stop $FS_CONTAINER_NAME
