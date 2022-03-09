@@ -103,7 +103,11 @@ realignedDir        = fullfile(derivesDir, softwareName, pipelineName, 'realigne
 % and coregistered data 
 if smoothKernelSize == 0
     destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, [smoothKernelSpace 'space']);  % where all the results of the TWO GLMs are stored
-    dataDir = fullfile (derivesDir, softwareName, pipelineName, 'coregistered');  % data that is used for the analysis
+    if strcmp(smoothKernelSpace,'native')
+        dataDir = fullfile (derivesDir, softwareName, pipelineName, 'coregistered');  % data that is used for the analysis
+    elseif strcmp(smoothKernelSpace,'mni')
+        dataDir = fullfile (derivesDir, softwareName, pipelineName, 'normalized');  % data that is used for the analysis
+    end
 else
     destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, smoothnessDir);  % where all the results of the TWO GLMs are stored
     dataDir = fullfile (derivesDir, softwareName, pipelineName, smoothnessDir);  % data that is used for the analysis

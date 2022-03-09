@@ -89,7 +89,6 @@ smoothKernelSize	= 6;                    % in mm
 smoothKernelSpace   = 'mni';                % mni or native (mni makes more sense, native rather for explorative analysis... maybe)
 % combine above specifications for a well structured file hierarchy
 smoothnessDir       = [num2str(smoothKernelSize) 'mm-smoothed-' smoothKernelSpace 'space'];                     % Name of smoothed data directory
-destDir             = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, smoothnessDir);  % where all the results of the TWO GLMs are stored
 % Get name, location and number of sourcedata subjects
 
 DICOMprefix         = 'sMag'; % input (['Please specify the prefix of your participant data in your SOURCE DATA.\n' ...
@@ -99,8 +98,20 @@ DICOMsubNames       = cellstr(DICOMsubNames);                                   
 
 % Get name, location and number of preprocessed subjects
 pipelineName        = 'spm12-preproc';                                                  % how is the folder named that contains preprocessed data
-dataDir             = fullfile(derivesDir, softwareName, pipelineName, smoothnessDir);  % data that is used for the analysis
 realignedDir        = fullfile(derivesDir, softwareName, pipelineName, 'realigned');    % needed for realignment files as regressors of no interest
+% if smoothing size is set to 0 use only realigned, slice time corrected
+% and coregistered data 
+if smoothKernelSize == 0
+    destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, [smoothKernelSpace 'space']);  % where all the results of the TWO GLMs are stored
+    if strcmp(smoothKernelSpace,'native')
+        dataDir = fullfile (derivesDir, softwareName, pipelineName, 'coregistered');  % data that is used for the analysis
+    elseif strcmp(smoothKernelSpace,'mni')
+        dataDir = fullfile (derivesDir, softwareName, pipelineName, 'normalized');  % data that is used for the analysis
+    end
+else
+    destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, smoothnessDir);  % where all the results of the TWO GLMs are stored
+    dataDir = fullfile (derivesDir, softwareName, pipelineName, smoothnessDir);  % data that is used for the analysis
+end
 subNames            = spm_select('List', dataDir, 'dir', 'sub-');
 subNames            = cellstr(subNames);
 
