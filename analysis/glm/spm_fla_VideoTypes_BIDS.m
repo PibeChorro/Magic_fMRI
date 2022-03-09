@@ -137,7 +137,7 @@ do.loadlog          = 1; % load LOG files!
 do.estimate         = 1;
 do.DefContrasts     = 1;
 % Which model to do
-do.wholeVideo       = 0;
+do.wholeVideo       = 1;
 do.specialMoment    = 1;
 
 
@@ -366,8 +366,8 @@ for s = 1:length(subNames)
                             end
                             % Select the frame of the special moment from the
                             % 'do' struct
-                            SpecialMoment               = do.all_frames_of_effect(contains(do.ListOfVideos,VideoName));
-                            SpecialMomentOnset          = SpecialMoment{1}*frameTime; % multiply with the frameduration
+                            SpecialMoment               = do.both_frames_of_effect(contains(do.ListOfVideos,VideoName));
+                            SpecialMomentOnset          = SpecialMoment*frameTime; % multiply with the frameduration
 
                             % The very first EXPERIMENTAL trigger is 
                             % substracted from Video start, to set the
@@ -398,8 +398,8 @@ for s = 1:length(subNames)
                         end
                         % Select the frame of the special moment from the
                         % 'do' struct
-                        SpecialMoment               = do.all_frames_of_effect(contains(do.ListOfVideos,VideoName));
-                        SpecialMomentOnset          = SpecialMoment{1}*frameTime; % multiply with the frameduration
+                        SpecialMoment               = do.both_frames_of_effect(contains(do.ListOfVideos,VideoName));
+                        SpecialMomentOnset          = SpecialMoment*frameTime; % multiply with the frameduration
                         
                         % The very first EXPERIMENTAL trigger is 
                         % substracted from Video start, to set the

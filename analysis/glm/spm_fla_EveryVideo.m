@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Script for the first level analysis of the "Magic" Experiment.
-% Idea for study: Dr. Pablo R Grassi in cooperation with Prof. Dr. Andreas
+% Idea for study: Dr. Pablo R Grassi in cooperation with Prof. Dr. Andreasboth_frames
 % Bartels in the 'Vision and Cognition Lab' at the University of Tübingen.
 % Development, implementation and execution: Vincent Plikat and Dr. Pablo R
 % Grassi in cooperation with Prof. Dr. Adreas Bartels
@@ -343,8 +343,8 @@ for s = 1:length(subNames)
                         else
                             normalVideoName=currentVideo;
                         end
-                        SpecialMoment               = do.all_frames_of_effect(contains(do.ListOfVideos,normalVideoName));
-                        SpecialMomentOnset          = SpecialMoment{1}*frameTime;
+                        SpecialMoment               = do.both_frames_of_effect(contains(do.ListOfVideos,normalVideoName));
+                        SpecialMomentOnset          = SpecialMoment*frameTime;
                         fla.trialOnset{end+1}       = log.data.VideoStart(reg)-log.Keys.trig(end)+...
                             SpecialMomentOnset;
 
