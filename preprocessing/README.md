@@ -86,3 +86,30 @@ You also need to deliver the number of images in this scan. ***!!!IMPORTANT!!!**
         - slice_time_corrected
   - rawdata
   - sourcedata
+  
+
+# ROI generation
+So far we have three different ROI sets, that are all generated with different atlases, toolboxes or prewritten scripts
+1. Benson ROIs. These ROIs are associated with visual processing. Benson wrote a toolbox to derive these ROIs from the Wang atlas 2014
+2. Glasser ROIs. These ROIs derive from the whole brain parcelation done by Glasser 2016. We chose this atlas because the parcelation is fine graned and we could use it to derive ROIs based on previous results by Danek 2015
+3. Network ROIs. These networks are taken from the Yeo atlas provided by freesurfer. It gives 7 different networks
+  
+## 1 Benson ROIs
+In order to create these ROIs, one must previously run the `recon-all` command from freesurfer. Then the `neuropythy atlas`command can be run with python. 
+This script creates a two atlas volume files for each hemisphere. With `mri_cor2label` individual label files for 25 ROIs (per hemisphere) can be created. One can merge these labels if necessary/wished. Then with `mri_label2vol` one can create nifti ROI files
+  
+## 2 Glasser ROIs
+For these ROIs its necessary to have the fsaverage image (or a link to it) in your subject directory, as well as the FreeSurferColorLUX.txt file.
+Download the `create_subj_volume_parcelation.sh` file and run it for each subject. 
+Depending on the flags set it creates labels and volume ROIs for each brain region in its parcelation
+One then probably wants to merge some of the labels/volumes because the provided ROIs are very fine grained
+  
+## Network ROIs
+For the seven network ROIs one needs to have access to the freesurfer directory. Freesurfer contains an atlas file (in multiple resolutions and stuff).
+With the `NetworkROIs.m` script this atlas is resliced into subject nativespace and coregistered to the meanEPI image. Both images are saved in an 'atlas' folder inside the freesurfer subject directory
+Running `BrainNetworkROIs.py` the atlas image is split into 7 network images, which are saved in 'corrected_ROIs'. 
+*Since the original atlas was resliced, the values for the networks are not preserved, but vary. Therefore a THRESHOLD is applied assigning voxels to a network if their values are within the THRESHOLD boundaries.
+  
+# Event TSV files
+This is not necessary for all analyses, but provides the BIDS coherent event files, containing stimulus and response information.
+Run `createEventTSVfiles.m` to create the tsv files. `calculateHits.m` is also needed in that step.
