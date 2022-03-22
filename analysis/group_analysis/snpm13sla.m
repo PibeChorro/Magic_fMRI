@@ -28,7 +28,7 @@ softwareName        = 'snpm13';
 % get the data from the first level analysis pipeline you want
 pipelineName        = 'spm12-fla';
 brainMask           = 'WholeBrain';         % whole brain or ROI
-conditionsAnalyzed  = 'VideoTypes';
+conditionsAnalyzed  = 'MagicEffects';
 smoothKernelSize	= 6;   % in mm
 smoothKernelSpace   = 'mni';
 % combine above specifications for a well structured file hierarchy
@@ -47,9 +47,9 @@ if ~isfolder(secLevelDir)
 end
 
 %% Define what to do
-do.specify    = 1;
-do.compute         = 1;
-do.inference     = 1;
+do.specify      = 1;
+do.compute      = 1;
+do.inference    = 1;
 % Which model to do
 do.wholeVideo       = 0;
 do.specialMoment    = 1;
@@ -159,7 +159,7 @@ for C = 1:nContrasts
 %                 matlabbatch{1}.spm.tools.snpm.inference.Thr.Clus.ClusSize.ClusSig.PthC = 0.001; % p-value threshold to obtain uncorrected cluster inference
             else 
                 % uncorrected with cluster size threshold
-                matlabbatch{1}.spm.tools.snpm.inference.Thr.Clus.ClusSize.ClusSig.Cth = 30; 
+                matlabbatch{1}.spm.tools.snpm.inference.Thr.Clus.ClusSize.ClusSig.Cth = 10; 
                 matlabbatch{1}.spm.tools.snpm.inference.WriteFiltImg.name = 'uncorrKclusterThrIMG';
             end
         else
