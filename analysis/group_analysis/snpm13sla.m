@@ -28,7 +28,7 @@ softwareName        = 'snpm13';
 % get the data from the first level analysis pipeline you want
 pipelineName        = 'spm12-fla';
 brainMask           = 'WholeBrain';         % whole brain or ROI
-conditionsAnalyzed  = 'MagicEffects';
+conditionsAnalyzed  = 'VideoTypes';
 smoothKernelSize	= 6;   % in mm
 smoothKernelSpace   = 'mni';
 % combine above specifications for a well structured file hierarchy
@@ -51,7 +51,7 @@ do.specify      = 1;
 do.compute      = 1;
 do.inference    = 1;
 % Which model to do
-do.wholeVideo       = 0;
+do.wholeVideo       = 1;
 do.specialMoment    = 1;
 % Which inference and correction
 do.clusterInference = 1;
@@ -182,21 +182,26 @@ for C = 1:nContrasts
         matlabbatch{1}.spm.tools.snpm.inference.Report = 'MIPtable';
 
         if do.wholeVideo
+            cd (fullfile(secLevelDir,wholeVideoGLMName,SPM.xCon(C).name))
             matlabbatch{1}.spm.tools.snpm.inference.SnPMmat = {fullfile(secLevelDir,wholeVideoGLMName,SPM.xCon(C).name, 'SnPM.mat')};
             spm_jobman('run', matlabbatch);
+            % save the created figure
+            figHandle = findobj(allchild(0), 'flat', 'Type', 'figure');
+            figName = 'Glasbrain.png';
+            saveas(figHandle, fullfile(secLevelDir,wholeVideoGLMName,SPM.xCon(C).name, figName), 'png')
         end
 
         if do.specialMoment
             cd (fullfile(secLevelDir,specialMomentGLMName,SPM.xCon(C).name))
             matlabbatch{1}.spm.tools.snpm.inference.SnPMmat = {fullfile(secLevelDir,specialMomentGLMName,SPM.xCon(C).name, 'SnPM.mat')};
             spm_jobman('run', matlabbatch);
+            % save the created figure
+            figHandle = findobj(allchild(0), 'flat', 'Type', 'figure');
+            figName = 'Glasbrain.png';
+            saveas(figHandle, fullfile(secLevelDir,specialMomentGLMName,SPM.xCon(C).name, figName), 'png')
         end
         clear matlabbatch;
     end
-    %% save the created figure
-    figHandle = findobj(allchild(0), 'flat', 'Type', 'figure');
-    figName = 'Glasbrain.png';
-    saveas(figHandle, fullfile(secLevelDir,specialMomentGLMName,SPM.xCon(C).name, figName), 'png')
 end
 
 cd (workingDir)

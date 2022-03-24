@@ -43,6 +43,7 @@ clear all;
 close all;
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "derivatives")\n\n'])
@@ -88,8 +89,8 @@ softwareName        = 'spm12';
 % get the data from the first level analysis pipeline you want
 pipelineName        = 'spm12-fla';
 brainMask           = 'WholeBrain';         % whole brain or ROI
-conditionsAnalyzed  = 'MagicEffects';
-smoothKernelSize	= 9;   % in mm
+conditionsAnalyzed  = 'VideoTypes';
+smoothKernelSize	= 6;   % in mm
 smoothKernelSpace   = 'mni';
 % combine above specifications for a well structured file hierarchy
 smoothnessDir       = [num2str(smoothKernelSize) 'mm-smoothed-' smoothKernelSpace 'space'];
@@ -112,7 +113,7 @@ do.estimate           = 1;
 do.DefContrasts       = 1;
 % Which model to do
 do.wholeVideo       = 1;
-do.specialMoment    = 1;
+do.specialMoment    = ;
 
 %% Settings
 % specify format for folder numeration

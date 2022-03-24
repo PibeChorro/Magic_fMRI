@@ -179,13 +179,6 @@ ROIS = [
         'DMN', 'DAN', 'VAN', 'visual'
       ]
 
-# objects used on magic tricks
-OBJECTS = [
-    'Ball',
-    'Card',
-    'Stick'
-    ]
-
 VIDEO_TYPE = [
     'Magic',
     'Control',
@@ -239,7 +232,6 @@ pre_post_inblock    = (label_df.Runs-1)//2  # Resulting in 0,0,1,1,2,2,3,3 ...
 # pre_post_inblock%2 resulting in 0,0,1,1,0,0,1,1 ...
 pre_post = ['pre' if pp%2 == 0 else 'post' for pp in pre_post_inblock]
 label_df['PrePost'] = pre_post
-label_df['Objects'] = np.nan                # Objects used in the videos
 label_df['Type']    = np.nan                # is it magic, control or surprise
 
 # again a complex process to throw out regressors of no interest (like realignment)
@@ -249,11 +241,6 @@ regressors_of_interest  = [True if ('Magic' in n)
                            else False for n in label_df.Regressors]
 # throw out all rows of regressors of no interest
 label_df = label_df.iloc[regressors_of_interest]
-    
-# Check for every entry in Regressors if it contains one of the object names. 
-# If so, assign the object name
-for o in OBJECTS:
-    label_df.Objects = np.where(label_df.Regressors.str.contains(o),o,label_df.Objects)
 
 # Check for every entry in Regressors if it contains one of the type names. 
 # If so, assign the type name

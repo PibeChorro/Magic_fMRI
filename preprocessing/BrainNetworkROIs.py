@@ -30,7 +30,7 @@ import nibabel as nib
 # VARIABLES FOR PATH SELECTION AND DATA ACCESS #
 ################################################
 HOME            = str(Path.home())
-PROJ_DIR        = os.path.join(HOME, 'Documents/Master_Thesis/DATA/MRI')
+PROJ_DIR        = os.path.join(HOME, 'Documents/Magic_fMRI/DATA/MRI')
 DERIVATIVES_DIR = os.path.join(PROJ_DIR, 'derivatives')
 COREGISTERED_DIR= os.path.join(DERIVATIVES_DIR, 'spm12', 'spm12-preproc','coregistered')
 FREESURFER_DIR  = os.path.join(DERIVATIVES_DIR,'freesurfer')
