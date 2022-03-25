@@ -132,9 +132,9 @@ fps         = 25;
 frameTime   = 1/fps;
 
 %% Define what to do
-do.SpecifyDesign    = 1;
-do.loadlog          = 1; % load LOG files!
-do.estimate         = 1;
+do.SpecifyDesign    = 0;
+do.loadlog          = 0; % load LOG files!
+do.estimate         = 0;
 do.DefContrasts     = 1;
 % Which model to do
 do.wholeVideo       = 1;
@@ -476,20 +476,20 @@ for s = 1:length(subNames)
         % Contrast Names:
         ContrastNames = ...
             {
-            'Magic > Control';... %1
-            'Control > Magic';... %2
-            'Magic > Control Before';               ... %3
-            'Control > Magic Before';               ... %4
-            'Magic Before > Magic After';           ... %5
-            'Magic After > Magic Before';           ... %6
-            'Magic > Surprise Before';              ... %7
-            'Surpise > Magic Before';               ... %8
-            'Surprise > Control';                   ... %9
-            'Control > Surprise';                   ... %10
-            'Magic > Control After';                ... %11
-            'Control > Magic After';                ... %12
-            'Magic > Surprise After';               ... %13
-            'Surpise > Magic After';                ... %14
+            'Magic vs Control';... %1
+            'Control vs Magic';... %2
+            'Magic vs Control Before';               ... %3
+            'Control vs Magic Before';               ... %4
+            'Magic Before vs Magic After';           ... %5
+            'Magic After vs Magic Before';           ... %6
+            'Magic vs Surprise Before';              ... %7
+            'Surpise vs Magic Before';               ... %8
+            'Surprise vs Control';                   ... %9
+            'Control vs Surprise';                   ... %10
+            'Magic vs Control After';                ... %11
+            'Control vs Magic After';                ... %12
+            'Magic vs Surprise After';               ... %13
+            'Surpise vs Magic After';                ... %14
             'MagPre-ConPre vs MagPost-ConPost';     ... %15
             'MagPost-ConPost vs MagPre-ConPre';     ... %16
             % Contrats to outrule the timeconfound by comparing run 1vs2
@@ -499,7 +499,7 @@ for s = 1:length(subNames)
             'Magic PreVsPost (run 2vs3)';           ... %18
             % Additional contrast to outrule the timeconfound by comparing
             % Control pre vs post
-            'Control Before > Control After';       ... %19
+            'Control Before vs Control After';       ... %19
             'Video vs Response';                    ... %20
             'Response vs Video'                     ... %21
             };
