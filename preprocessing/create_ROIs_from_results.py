@@ -61,13 +61,11 @@ import os
 import sys
 import argparse
 from pathlib import Path
-import git
-# data structuration and calculations
+# library for neuroimaging
 from nilearn.image import load_img, new_img_like
 import nibabel as nib
 import numpy as np   # most important numerical calculations
-# library for neuroimaging
-import pingouin as pg
+from scipy import ndimage
 # optimize time performance
 import time
 
@@ -186,66 +184,32 @@ DERIVATIVES_DIR = os.path.join(PROJ_DIR, 'derivatives')
 TYPE_RES_DIR    = os.path.join(DERIVATIVES_DIR, 'snpm13', 'snpm13-sla', 'WholeBrain', 'VideoTypes', '6mm-smoothed-mnispace', time_analyzed)
 EFFECT_RES_DIR  = os.path.join(DERIVATIVES_DIR, 'snpm13', 'snpm13-sla', 'WholeBrain', 'MagicEffects', '6mm-smoothed-mnispace', time_analyzed)
 
-TYPE_CONTRASTS_OF_INTEREST = ['Magic Before > Magic After', 'MagPre-ConPre vs MagPost-ConPost']
-EFFECT_CONTRASTS_OF_INTEREST = ['Appear Before > Appear After', 'AppPre-ConPre vs AppPost-ConPost',
-                                'Change Before > Change After', 'ChaPre-ConPre vs ChaPost-ConPost',
-                                'Vanish Before > Vanish After', 'VanPre-ConPre vs Vanpost-ConPost']
+TYPE_CONTRASTS_OF_INTEREST = ['Magic Before vs Magic After', 'MagPre-ConPre vs MagPost-ConPost']
+EFFECT_CONTRASTS_OF_INTEREST = ['Appear Before vs Appear After', 'AppPre-ConPre vs AppPost-ConPost',
+                                'Change Before vs Change After', 'ChaPre-ConPre vs ChaPost-ConPost',
+                                'Vanish Before vs Vanish After', 'VanPre-ConPre vs Vanpost-ConPost']
 
-P_MAP_NAME = 'lP+'
-SIG_THRESHOLD = 3.0     # values are -log_10(p) -> p=0.01: 2    p=0.001: 3
-CLUST_SIZE_THRESHOLD = 10
+P_MAP_NAME = 'uncorrKclusterThrIMG.nii'
 
 # first do the results from VideoTypes
 for cons in TYPE_CONTRASTS_OF_INTEREST:
-    img_path = os.path.join(TYPE_RES_DIR, cons, P_MAP_NAME+'.img')
+    img_path = os.path.join(TYPE_RES_DIR, cons, P_MAP_NAME)
     current_img = load_img(img_path)
     img_data = current_img.get_fdata()
-    img_bool = img_data > SIG_THRESHOLD
-    num_sig_voxel = np.sum(img_bool, axis=None)
+    img_bool = img_data > 0
 
-    sys.setrecursionlimit(num_sig_voxel)
-    clusters = largestRegion(img_bool)
-
-    for c, cl in enumerate(clusters):
-        results = new_img_like(ref_niimg=current_img, data=cl)
-        nib.save(results, os.path.join(TYPE_RES_DIR, cons, 'cluster' + str(c) +'.nii'))
+    labels, n_labels = ndimage.label(img_bool)
+    results = new_img_like(ref_niimg=current_img, data=labels)
+    nib.save(results, os.path.join(TYPE_RES_DIR, cons, 'clusters.nii'))
 
 # second do the results from MagicEffects
 
 for cons in EFFECT_CONTRASTS_OF_INTEREST:
-    img_path = os.path.join(EFFECT_RES_DIR, cons, P_MAP_NAME + '.img')
+    img_path = os.path.join(EFFECT_RES_DIR, cons, P_MAP_NAME)
     current_img = load_img(img_path)
     img_data = current_img.get_fdata()
-    img_bool = img_data >= SIG_THRESHOLD
-    num_sig_voxel = np.sum(img_bool, axis=None)
+    img_bool = img_data > 0
 
-    sys.setrecursionlimit(num_sig_voxel)
-    clusters = largestRegion(img_bool)
-
-    for c, cl in enumerate(clusters):
-        results = new_img_like(ref_niimg=current_img, data=cl)
-        nib.save(results, os.path.join(TYPE_RES_DIR, cons, 'cluster' + str(c) + '.nii'))
-
-##################
-# WRITE LOG FILE #
-##################
-# We want to save all important information of the script execution
-# To get the git hash we have to check if the script was run locally or on the
-# cluster. If it is run on the cluster we want to get the $PBS_O_WORKDIR
-# variable, which preserves the location from which the job was started.
-# If it is run locally we want to get the current working directory.
-
-try:
-    script_file_directory = os.environ["PBS_O_WORKDIR"]
-except KeyError:
-    script_file_directory = os.getcwd()
-
-try:
-    rep = git.Repo(script_file_directory, search_parent_directories=True)
-    git_hash = rep.head.object.hexsha
-except git.InvalidGitRepositoryError:
-    git_hash = 'not-found'
-
-# create a log file, that saves some information about the run script
-with open(os.path.join(RESULTS_DIR, 'stelzer_analysis-logfile.txt'), 'w+') as writer:
-    writer.write('Codeversion: {} \n'.format(git_hash))
+    labels, n_labels = ndimage.label(img_bool)
+    results = new_img_like(ref_niimg=current_img, data=labels)
+    nib.save(results, os.path.join(TYPE_RES_DIR, cons, 'clusters.nii'))
