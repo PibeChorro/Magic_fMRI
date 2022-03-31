@@ -15,10 +15,11 @@ clear all; % first clear all variables, so we don't have any intervening variabl
 tic; % start script.
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "rawdata")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    = uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -34,13 +35,13 @@ if ~isfolder(derivesDir)
 end
 
 %% Data locations 
-softwareName        = 'spm12';              % software used to create preprocessed data
+softwareName        = 'snpm13';              % software used to create preprocessed data
 
 % specify the name of the analysis pipeline
-analysisPipeline    = 'spm12-sla';          % how is the folder named that contains first level results
+analysisPipeline    = 'snpm13-sla';          % how is the folder named that contains first level results
 brainMask           = 'WholeBrain';         % whole brain or ROI
 glmUsed             = 'MagicEffects';
-smoothKernelSize    = 9;                    % in mm
+smoothKernelSize    = 6;                    % in mm
 brainSpace          = 'mni';                % native or mni
 smoothnessDir       = [num2str(smoothKernelSize) 'mm-smoothed-' brainSpace 'space'];                     % Name of smoothed data directory
 
@@ -54,42 +55,42 @@ end
 
 %% General settings
 matlabbatch{1}.spm.util.imcalc.outdir = {destDir};
-matlabbatch{1}.spm.util.imcalc.expression = '(i1 > 2.8) & (i2 > 2.8) & (i3 > 2.8)'; 
+matlabbatch{1}.spm.util.imcalc.expression = '(i1 > 0) & (i2 > 0) & (i3 > 0)'; 
 matlabbatch{1}.spm.util.imcalc.var = struct('name', {}, 'value', {});
 matlabbatch{1}.spm.util.imcalc.options.dmtx = 0;
 matlabbatch{1}.spm.util.imcalc.options.mask = 0;
 matlabbatch{1}.spm.util.imcalc.options.interp = 1;
 matlabbatch{1}.spm.util.imcalc.options.dtype = 4;
 spm('defaults', 'FMRI');
-%%%%%%%%%%%%%%%%%%%%%%%%%
-% p-values              %
-% T = 3.485 => p=0.001  %
-% T = 2.8   => p=0.005  %
-% T = 2.5   => p=0.01   %
-%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%
+% -log_10 p-values  %
+% 3     => p=0.001  %
+% 2.8   => p=0.005  %
+% 2     => p=0.01   %
+%%%%%%%%%%%%%%%%%%%%%
 %% Conjunction 
 % Effects > Controls
 matlabbatch{1}.spm.util.imcalc.input = {
-                                        fullfile(dataDir, 'Appear > Control Before/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'Change > Control Before/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'Vanish > Control Before/spmT_0001.nii,1')
+                                        fullfile(dataDir, 'Appear vs Control Before/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'Change vs Control Before/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'Vanish vs Control Before/uncorrKclusterThrIMG.nii,1')
                                         };
-matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_Effects>Control';
+matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_EffectsVsControl';
 spm_jobman('run', matlabbatch);
 
-% Pre > Post
+% Pre vs Post
 matlabbatch{1}.spm.util.imcalc.input = {
-                                        fullfile(dataDir, 'Appear Before > Appear After/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'Change Before > Change After/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'Vanish Before > Vanish After/spmT_0001.nii,1')
+                                        fullfile(dataDir, 'Appear Before vs Appear After/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'Change Before vs Change After/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'Vanish Before vs Vanish After/uncorrKclusterThrIMG.nii,1')
                                         };
-matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_EffectsPre>Post';
+matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_EffectsPreVsPost';
 spm_jobman('run', matlabbatch);
-% Magic>Control - Pre>Post interaction
+% MagicvsControl - PrevsPost interaction
 matlabbatch{1}.spm.util.imcalc.input = {
-                                        fullfile(dataDir, 'AppPre-ConPre vs AppPost-ConPost/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'ChaPre-ConPre vs ChaPost-ConPost/spmT_0001.nii,1')
-                                        fullfile(dataDir, 'VanPre-ConPre vs Vanpost-ConPost/spmT_0001.nii,1')
+                                        fullfile(dataDir, 'AppPre-ConPre vs AppPost-ConPost/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'ChaPre-ConPre vs ChaPost-ConPost/uncorrKclusterThrIMG.nii,1')
+                                        fullfile(dataDir, 'VanPre-ConPre vs Vanpost-ConPost/uncorrKclusterThrIMG.nii,1')
                                         };
-matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_Effects>Control-Pre>Post_Interaction';
+matlabbatch{1}.spm.util.imcalc.output = 'Conjunction_EffectsVsControl-PrevsPost_Interaction';
 spm_jobman('run', matlabbatch);
