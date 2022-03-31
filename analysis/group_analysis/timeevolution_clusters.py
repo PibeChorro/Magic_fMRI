@@ -59,6 +59,7 @@
 # interact with the operating system
 import glob
 import os
+import copy
 import argparse
 import warnings
 from pathlib import Path
@@ -83,8 +84,6 @@ T_START = time.time()
 parser = argparse.ArgumentParser()
 
 # add all the input arguments
-parser.add_argument("--smooth", nargs='?', const=0,
-                    default=0, type=int)  # what data should be used
 parser.add_argument("--time", nargs='?', const='moment',
                     default='moment', type=str)  # what data should be used
 # parse the arguments to a parse-list(???)
@@ -109,210 +108,168 @@ EFFECT_RES_DIR = os.path.join(DERIVATIVES_DIR, 'snpm13', 'snpm13-sla', 'WholeBra
 
 ALL_RUNS = np.linspace(1, 12, 12, dtype=int)
 
-TYPE_CONTRASTS_OF_INTEREST = ['Magic Before vs Magic After', 'MagPre-ConPre vs MagPost-ConPost']
-EFFECT_CONTRASTS_OF_INTEREST = ['Appear Before vs Appear After', 'AppPre-ConPre vs AppPost-ConPost',
-                                'Change Before vs Change After', 'ChaPre-ConPre vs ChaPost-ConPost',
-                                'Vanish Before vs Vanish After', 'VanPre-ConPre vs VanPost-ConPost']
-EFFECTS = ['Appear', 'Appear',
-           'Change', 'Change',
-           'Vanish', 'Vanish']
+# EFFECT_CONTRASTS_OF_INTEREST = ['Appear Before vs Appear After', 'AppPre-ConPre vs AppPost-ConPost',
+#                                 'Change Before vs Change After', 'ChaPre-ConPre vs ChaPost-ConPost',
+#                                 'Vanish Before vs Vanish After', 'VanPre-ConPre vs VanPost-ConPost']
+# EFFECTS = ['Appear', 'Appear',
+#            'Change', 'Change',
+#            'Vanish', 'Vanish']
 
 CLUSTER_IMAGE = 'clusters.nii'
 CLUSTERSIZE_THRESHOLD = 10
 
-for type_contrast in TYPE_CONTRASTS_OF_INTEREST:
+# dictionary saving the AIC values for each model
+aic_dict = {
+    'pre_post': [],
+    'runs_in_block': [],
+    'runs': []
+}
 
+interpretations = ['pre_post', 'interaction']
+
+# Only Magic - not effect specific
+# read in a dataframe containing the video condition, the prepost condition and the corresponding beta names
+# created by 'create_type_ROI_DF.py'
+df_path = os.path.join(DERIVATIVES_DIR, 'univariate-ROI', 'SpecialMoment', 'VideoType', 'data_frame.csv')
+dataframe = pd.read_csv(df_path)
+# get all subjects
+subjects_path = os.path.join(SPM_FLA_DIR, 'VideoTypes', '6mm-smoothed-mnispace', time_analyzed)
+subjects = glob.glob(os.path.join(subjects_path, 'sub-*'))
+subjects.sort()
+ALL_SUBJECTS = np.linspace(1, len(subjects), len(subjects), dtype=int)
+
+# create variables that are the same for all clusters
+subs = np.repeat(ALL_SUBJECTS, len(ALL_RUNS))
+runs = np.tile(ALL_RUNS, len(subjects))
+pre_post_inblock    = (runs-1)//2   # Resulting in 0,0,1,1,2,2,3,3 ...
+# pre_post_inblock%2 resulting in 0,0,1,1,0,0,1,1 ...
+pre_post = ['pre' if pp%2 == 0 else 'post' for pp in pre_post_inblock]
+runs_in_block = (runs-1) % 4        # Resulting in 0,1,2,3,0,1,2,3, ...
+#
+data_dict = {
+    'subject': subs,
+    'runs': runs,
+    'pre_post': pre_post,
+    'runs_in_block': runs_in_block
+}
+
+# FIRST DO MAGIC BEFORE VS MAGIC AFTER
+pre_post_path = os.path.join(TYPE_RES_DIR, 'Magic Before vs Magic After')
+interaction_path = os.path.join(TYPE_RES_DIR, 'MagPre-ConPre vs MagPost-ConPost')
+paths = [pre_post_path, interaction_path]
+
+for path in paths:
     # dictionary saving the AIC values for each model
-    aic_dict = {
-        'cluster': [],
-        'pre_post': [],
-        'runs_in_block': [],
-        'all_runs': []
-    }
+    current_aic_dict = copy.deepcopy(aic_dict)
+    clusters = []
 
-    # FIRST DO MAGIC BEFORE VS MAGIC AFTER
-    img_path = os.path.join(TYPE_RES_DIR, type_contrast, CLUSTER_IMAGE)
-    # read in a dataframe containing the video condition, the prepost condition and the corresponding beta names
-    # created by 'create_type_ROI_DF.py'
-    df_path = os.path.join(DERIVATIVES_DIR, 'univariate-ROI', 'SpecialMoment', 'VideoType', 'data_frame.csv')
-    dataframe = pd.read_csv(df_path)
-    # reduce dataframe to only Magic conditions
-    magic_df = dataframe[dataframe.Type == 'Magic']
-
-    # get all subjects
-    subjects_path = os.path.join(SPM_FLA_DIR, 'VideoTypes', '6mm-smoothed-mnispace', time_analyzed)
-    subjects = glob.glob(os.path.join(subjects_path, 'sub-*'))
-    subjects.sort()
-    ALL_SUBJECTS = np.linspace(1, len(subjects), len(subjects), dtype=int)
-
-    # create variables that are the same for all clusters
-    subs = np.repeat(ALL_SUBJECTS, len(ALL_RUNS))
-    runs = np.tile(ALL_RUNS, len(subjects))
-    pre_post_inblock    = (runs-1)//2   # Resulting in 0,0,1,1,2,2,3,3 ...
-    # pre_post_inblock%2 resulting in 0,0,1,1,0,0,1,1 ...
-    pre_post = ['pre' if pp%2 == 0 else 'post' for pp in pre_post_inblock]
-    runs_in_block = (runs-1) % 4        # Resulting in 0,1,2,3,0,1,2,3, ...
-
-    current_img = load_img(img_path)
-    img_data = current_img.get_fdata()
-
+    pre_post_img = load_img(os.path.join(path, CLUSTER_IMAGE))
+    pre_post_img_data = pre_post_img.get_fdata()
     # get the highest value in our clusters image - to get the number of separate clusters
-    num_clusters = np.max(img_data, axis=None).astype(int)
-
+    num_clusters = np.max(pre_post_img_data, axis=None).astype(int)
     for c in range(num_clusters):
-        # set start parameter for model. None if it is the first time, else take the values from the previous model
-        if c == 0:
-            params_pre_post = None
-            params_runs_in_block = None
-            params_all_runs = None
-        else:
-            params_pre_post = pre_post_res.params
-            params_runs_in_block = runs_in_block_res.params
-            params_all_runs = runs_res.params
         # get cluster mask
-        cluster_mask = np.array(img_data == c + 1)
+        cluster_mask = np.array(pre_post_img_data == c + 1)
         # check wether the cluster is large enough
         if np.sum(cluster_mask, axis=None) < CLUSTERSIZE_THRESHOLD:
             continue
 
         # fill dictionary with entries
-        data_dict = {
-            'subject': subs,
-            'runs': runs,
-            'pre_post': pre_post,
-            'runs_in_block': runs_in_block,
-            'betas': []
-        }
+        current_data_dict = data_dict.copy()
+        betas = []
 
         for s, sub in enumerate(subjects):
-            sub_df = magic_df[magic_df.subject == s+1]
+            sub_df = dataframe[dataframe.subject == s+1]
             for current_run in ALL_RUNS:
-                current_beta = sub_df.BetaNames[sub_df.Runs == current_run].values[0]
+                current_beta = sub_df.BetaNames[(sub_df.Runs == current_run) & (sub_df.Type == 'Magic')].values[0]
                 beta_nii = nib.load(os.path.join(sub, current_beta))
                 beta_data = beta_nii.get_fdata()
                 beta_roi = beta_data[cluster_mask & ~np.isnan(beta_data)]
 
-                data_dict['betas'].append(beta_roi.mean(axis=None))
+                betas.append(beta_roi.mean(axis=None))
+        current_data_dict['betas'] = betas
+        cluster_df = pd.DataFrame(data=current_data_dict, columns=current_data_dict.keys())
+        cluster_df.to_csv(path_or_buf=os.path.join(path, 'cluster{:02}_df.csv'.format(c+1)), index=False)
 
-        cluster_df = pd.DataFrame(data=data_dict, columns=data_dict.keys())
-        cluster_df.to_csv(path_or_buf=os.path.join(TYPE_RES_DIR, type_contrast, 'cluster{:02}_df.csv'.format(c+1)), index=False)
+        clusters.append(c+1)
 
-        aic_dict['cluster'].append(c+1)
+        for mod in current_aic_dict.keys():
+            current_model = smf.mixedlm("betas ~ "+mod, cluster_df, groups=cluster_df['subject'])
+            try:
+                # make convergence warning an error in oder to catch it
+                warnings.simplefilter('error', ConvergenceWarning)
+                res = current_model.fit(reml=False, method="cg")
+            except ConvergenceWarning:
+                warnings.simplefilter('default', ConvergenceWarning)
+                res = current_model.fit(reml=False, method="cg", start_params=res.params)
+            except np.linalg.LinAlgError as err:
+                print('Model cannot be solved for cluster {} model {}'.format(c+1, mod))
+                res.aic = None
+            current_aic_dict[mod].append(res.aic)
+    current_aic_dict['cluster'] = clusters
+    aic_df = pd.DataFrame(data=current_aic_dict, columns=current_aic_dict.keys())
+    aic_df.to_csv(path_or_buf=os.path.join(path, 'cluster_AICs.csv'))
 
-        pre_post_model = smf.mixedlm("betas ~ pre_post", cluster_df, groups=cluster_df['subject'])
+# SECOND DO INTERACTION
+# dictionary saving the AIC values for each model
+current_aic_dict = aic_dict.copy()
+clusters = []
+
+interaction_img = load_img(os.path.join(interaction_path, CLUSTER_IMAGE))
+interaction_img_data = interaction_img.get_fdata()
+# get the highest value in our clusters image - to get the number of separate clusters
+num_clusters = np.max(interaction_img_data, axis=None).astype(int)
+
+for c in range(num_clusters):
+    # get cluster mask
+    cluster_mask = np.array(pre_post_img_data == c + 1)
+    # check wether the cluster is large enough
+    if np.sum(cluster_mask, axis=None) < CLUSTERSIZE_THRESHOLD:
+        continue
+
+    # fill dictionary with entries
+    current_data_dict = data_dict.copy()
+    betas = []
+
+    for s, sub in enumerate(subjects):
+        sub_df = dataframe[dataframe.subject == s+1]
+        for current_run in ALL_RUNS:
+            current_magic_beta = sub_df.BetaNames[(sub_df.Runs == current_run) & (sub_df.Type == 'Magic')].values[0]
+            magic_beta_nii = nib.load(os.path.join(sub, current_magic_beta))
+            magic_beta_data = magic_beta_nii.get_fdata()
+
+            current_control_beta = sub_df.BetaNames[(sub_df.Runs == current_run) & (sub_df.Type == 'Control')].values[0]
+            control_beta_nii = nib.load(os.path.join(sub, current_control_beta))
+            control_beta_data = control_beta_nii.get_fdata()
+
+            beta_data = magic_beta_data - control_beta_data
+            beta_roi = beta_data[cluster_mask & ~np.isnan(beta_data)]
+
+            betas.append(beta_roi.mean(axis=None))
+    current_data_dict['betas'] = betas
+    cluster_df = pd.DataFrame(data=current_data_dict, columns=current_data_dict.keys())
+    cluster_df.to_csv(path_or_buf=os.path.join(interaction_path, 'interaction_cluster{:02}_df.csv'.format(c+1)),
+                      index=False)
+
+    clusters.append(c+1)
+
+    for mod in current_aic_dict.keys():
+        current_model = smf.mixedlm("betas ~ "+mod, cluster_df, groups=cluster_df['subject'])
         try:
-            pre_post_res = pre_post_model.fit(reml=False, method="cg")
+            # make convergence warning an error in oder to catch it
+            warnings.simplefilter('error', ConvergenceWarning)
+            res = current_model.fit(reml=False, method="cg")
         except ConvergenceWarning:
-            pre_post_res = pre_post_model.fit(reml=False, method="cg", start_params=pre_post_res.params)
-        aic_dict['pre_post'].append(pre_post_res.aic)
-
-        runs_in_block_model = smf.mixedlm("betas ~ runs_in_block", cluster_df, groups=cluster_df['subject'])
-        try:
-            runs_in_block_res = runs_in_block_model.fit(reml=False, method="cg")
-        except ConvergenceWarning:
-            runs_in_block_res = runs_in_block_model.fit(reml=False, method="cg", start_params=runs_in_block_res.params)
-        aic_dict['runs_in_block'].append(runs_in_block_res.aic)
-
-        runs_model = smf.mixedlm("betas ~ runs", cluster_df, groups=cluster_df['subject'])
-        try:
-            runs_res = runs_model.fit(reml=False, method="cg")
-        except ConvergenceWarning:
-            runs_res = runs_model.fit(reml=False, method="cg", start_params=runs_res.params)
-        aic_dict['all_runs'].append(runs_res.aic)
-
-    aic_df = pd.DataFrame(data=aic_dict, columns=aic_dict.keys())
-    aic_df.to_csv(path_or_buf=os.path.join(TYPE_RES_DIR, type_contrast, 'cluster_AICs.csv'), index=False)
-
-for effect, effect_contrast in zip(EFFECTS, EFFECT_CONTRASTS_OF_INTEREST):
-
-    # dictionary saving the AIC values for each model
-    aic_dict = {
-        'cluster': [],
-        'pre_post': [],
-        'runs_in_block': [],
-        'all_runs': []
-    }
-
-    # FIRST DO MAGIC BEFORE VS MAGIC AFTER
-    img_path = os.path.join(EFFECT_RES_DIR, effect_contrast, CLUSTER_IMAGE)
-    # read in a dataframe containing the video condition, the prepost condition and the corresponding beta names
-    # created by 'create_type_ROI_DF.py'
-    df_path = os.path.join(DERIVATIVES_DIR, 'univariate-ROI', 'SpecialMoment', 'MagicEffects', 'data_frame.csv')
-    dataframe = pd.read_csv(df_path)
-    # reduce dataframe to only Magic conditions
-    magic_df = dataframe[(dataframe.Type == 'Magic') & (dataframe.Effect == effect)]
-
-    # get all subjects
-    subjects_path = os.path.join(SPM_FLA_DIR, 'MagicEffects', '6mm-smoothed-mnispace', time_analyzed)
-    subjects = glob.glob(os.path.join(subjects_path, 'sub-*'))
-    ALL_SUBJECTS = np.linspace(1, len(subjects), len(subjects), dtype=int)
-
-    # create variables that are the same for all clusters
-    subs = np.repeat(ALL_SUBJECTS, len(ALL_RUNS))
-    runs = np.tile(ALL_RUNS, len(subjects))
-    pre_post_inblock = (runs - 1) // 2  # Resulting in 0,0,1,1,2,2,3,3 ...
-    # pre_post_inblock%2 resulting in 0,0,1,1,0,0,1,1 ...
-    pre_post = ['pre' if pp % 2 == 0 else 'post' for pp in pre_post_inblock]
-    runs_in_block = (runs - 1) % 4  # Resulting in 0,1,2,3,0,1,2,3, ...
-
-    current_img = load_img(img_path)
-    img_data = current_img.get_fdata()
-
-    # get the highest value in our clusters image - to get the number of separate clusters
-    num_clusters = np.max(img_data, axis=None).astype(int)
-
-    for c in range(num_clusters):
-        # get cluster mask
-        cluster_mask = np.array(img_data == c + 1)
-        # check wether the cluster is large enough
-        if np.sum(cluster_mask, axis=None) < CLUSTERSIZE_THRESHOLD:
-            continue
-
-        # fill dictionary with entries
-        data_dict = {
-            'subject': subs,
-            'runs': runs,
-            'pre_post': pre_post,
-            'runs_in_block': runs_in_block,
-            'betas': []
-        }
-
-        for s, sub in enumerate(subjects):
-            sub_df = magic_df[magic_df.subject == s + 1]
-            for current_run in ALL_RUNS:
-                current_beta = sub_df.BetaNames[sub_df.Runs == current_run].values[0]
-                beta_nii = nib.load(os.path.join(sub, current_beta))
-                beta_data = beta_nii.get_fdata()
-                beta_roi = beta_data[cluster_mask & ~np.isnan(beta_data)]
-
-                data_dict['betas'].append(beta_roi.mean(axis=None))
-
-        cluster_df = pd.DataFrame(data=data_dict, columns=data_dict.keys())
-        cluster_df.to_csv(
-            path_or_buf=os.path.join(EFFECT_RES_DIR, effect_contrast, 'cluster{:02}_df.csv'.format(c + 1)), index=False)
-
-        aic_dict['cluster'].append(c + 1)
-
-        pre_post_model = smf.mixedlm("betas ~ pre_post", cluster_df, groups=cluster_df['subject'])
-        try:
-            pre_post_res = pre_post_model.fit(reml=False, method="cg")
-        except ConvergenceWarning:
-            pre_post_res = pre_post_model.fit(reml=False, method="cg", start_params=pre_post_res.params)
-        aic_dict['pre_post'].append(pre_post_res.aic)
-
-        runs_in_block_model = smf.mixedlm("betas ~ runs_in_block", cluster_df, groups=cluster_df['subject'])
-        try:
-            runs_in_block_res = runs_in_block_model.fit(reml=False, method="cg")
-        except ConvergenceWarning:
-            runs_in_block_res = runs_in_block_model.fit(reml=False, method="cg", start_params=runs_in_block_res.params)
-        aic_dict['runs_in_block'].append(runs_in_block_res.aic)
-
-        runs_model = smf.mixedlm("betas ~ runs", cluster_df, groups=cluster_df['subject'])
-        try:
-            runs_res = runs_model.fit(reml=False, method="cg")
-        except ConvergenceWarning:
-            runs_res = runs_model.fit(reml=False, method="cg", start_params=runs_res.params)
-        aic_dict['all_runs'].append(runs_res.aic)
-
-    aic_df = pd.DataFrame(data=aic_dict, columns=aic_dict.keys())
-    aic_df.to_csv(path_or_buf=os.path.join(EFFECT_RES_DIR, effect_contrast, 'cluster_AICs.csv'), index=False)
+            warnings.simplefilter('default', ConvergenceWarning)
+            try:
+                res = current_model.fit(reml=False, method="cg", start_params=res.params)
+            except np.linalg.LinAlgError as err:
+                print('Model cannot be solved for cluster {} model {}'.format(c + 1, mod))
+                res.aic = None
+        except np.linalg.LinAlgError as err:
+            print('Model cannot be solved for cluster {} model {}'.format(c+1, mod))
+            res.aic = None
+        current_aic_dict[mod].append(res.aic)
+current_aic_dict['cluster'] = clusters
+aic_df = pd.DataFrame(data=current_aic_dict, columns=current_aic_dict.keys())
+aic_df.to_csv(path_or_buf=os.path.join(interaction_path, 'interaction_cluster_AICs.csv'), index=clusters)
