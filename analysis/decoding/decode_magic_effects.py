@@ -192,8 +192,8 @@ try:
             'C_'+str(SVM_C))
         my_decoder          = SVC(kernel='linear', C=SVM_C)
     else:
-        raise
-            
+        raise argparse.ArgumentTypeError('Value has to be: LDA or SVM. Your input was {}'.format(DECODER))
+
     # based on command line flag decide what data should be used. 
     # 'pre' = pre revelation data
     # 'post' = post revelation data
@@ -205,7 +205,7 @@ try:
     elif RUNS_TO_USE == 'all':
         runs_of_interest = [1,2,3,4,5,6,7,8,9,10,11,12] 
     else:
-        raise
+        raise argparse.ArgumentTypeError('Value has to be: pre, post or all. Your input was {}'.format(RUNS_TO_USE))
     
     ################################################
     # VARIABLES FOR PATH SELECTION AND DATA ACCESS #
@@ -344,7 +344,7 @@ try:
         ps = [[train1, test1], [train2,test2],
               [train3, test3], [train4,test4]]
     else:
-        raise
+        raise argparse.ArgumentTypeError('Value has to be: objects or tricks. Your input was {}'.format(OVER))
     
     label_df['Labels']  = np.nan                # Labels
     # Check for every entry in Regressors if it contains one of the label names. If so, assign the label name
