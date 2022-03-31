@@ -69,92 +69,6 @@ from scipy import ndimage
 # optimize time performance
 import time
 
-
-# A function to check if a given cell
-# (row, col) can be included in DFS
-# shamelessly stolen from
-# https://www.geeksforgeeks.org/find-length-largest-region-boolean-matrix/
-# and modified for 3D matrix
-def isSafe(M, row, col, ais, visited):
-    '''isSave: Checks if a voxel (one cell in a 3D Matrix) has already been
-    checked.
-    Input:
-        M: 3D matrix. This one is investigated in the whole process
-        row: index of row
-        col: index of column
-        ais: index of aisle (3rd dimension)
-        visited: if the cell was already checked
-    Returns:
-        If the cell entry is True AND has not been visited before.'''
-    ROW = M.shape[0]
-    COL = M.shape[1]
-    AIS = M.shape[2]
-
-    # row number is in range, column number is in
-    # range and value is 1 and not yet visited
-    return ((row >= 0) and (row < ROW) and
-            (col >= 0) and (col < COL) and
-            (ais >= 0) and (ais < AIS) and
-            (M[row, col, ais] and not visited[row, col, ais]))
-
-
-# A utility function to do DFS for a 3D
-# boolean matrix. It only considers
-# the 6 neighbours as adjacent faces
-def DFS(M, row, col, ais, visited, count, indices):
-    # These arrays are used to get row and column and aisle
-    # numbers of 6 neighbouring faces of a given cell
-    rowNbr = [-1, 1, 0, 0, 0, 0]
-    colNbr = [0, 0, -1, 1, 0, 0]
-    aisNbr = [0, 0, 0, 0, -1, 1]
-
-    # Mark this cell as visited
-    visited[row, col, ais] = True
-    # append indices of visited cell
-    indices[row, col, ais] = 1
-
-    # Recur for all connected neighbours
-    for k in range(6):
-        if (isSafe(M, row + rowNbr[k],
-                   col + colNbr[k],
-                   ais + aisNbr[k], visited)):
-            # increment region length by one
-            count[0] += 1
-            DFS(M, row + rowNbr[k],
-                col + colNbr[k], ais + aisNbr[k],
-                visited, count, indices)
-
-
-# The main function that returns largest
-# length region of a given boolean 3D matrix
-def largestRegion(M):
-    ROW = M.shape[0]
-    COL = M.shape[1]
-    AIS = M.shape[2]
-
-    # Make a bool array to mark visited cells.
-    # Initially all cells are unvisited
-    visited = np.zeros(M.shape)
-
-    # Initialize result as 0 and travesle
-    # through the all cells of given matrix
-    cluster_sizes = []
-    all_clusters = []
-    for i in range(ROW):
-        for j in range(COL):
-            for k in range(AIS):
-
-                # If a cell with value 1 is not
-                if (M[i, j, k] and not visited[i, j, k]):
-                    # visited yet, then new region found
-                    count = [1]
-                    cluster = np.zeros(M.shape)
-                    DFS(M, i, j, k, visited, count, cluster)
-                    if count[0] > CLUST_SIZE_THRESHOLD:
-                        all_clusters.append(cluster)
-
-    return all_clusters
-
 # get start time
 T_START = time.time()
 
@@ -212,4 +126,4 @@ for cons in EFFECT_CONTRASTS_OF_INTEREST:
 
     labels, n_labels = ndimage.label(img_bool)
     results = new_img_like(ref_niimg=current_img, data=labels)
-    nib.save(results, os.path.join(TYPE_RES_DIR, cons, 'clusters.nii'))
+    nib.save(results, os.path.join(EFFECT_RES_DIR, cons, 'clusters.nii'))
