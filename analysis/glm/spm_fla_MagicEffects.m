@@ -562,10 +562,10 @@ for s = 1:length(subNames)
             'Change vs Surprise After';              ... %43
             % Interaction effects
             'AppPre-ConPre vs AppPost-ConPost';     ... %44
-            'VanPre-ConPre vs Vanpost-ConPost';     ... %45
+            'VanPre-ConPre vs VanPost-ConPost';     ... %45
             'ChaPre-ConPre vs ChaPost-ConPost';     ... %46
             'AppPost-ConPost vs AppPre-ConPre';     ... %47
-            'Vanpost-ConPost vs Vanpost-ConPost';   ... %48
+            'Vanpost-ConPost vs VanPre-ConPre';     ... %48
             'ChaPost-ConPost vs ChaPre-ConPre';     ... %49
             % Contrats to outrule the timeconfound by comparing run 1vs2
             % and run 2vs3 - the same time difference, but the first is pre
