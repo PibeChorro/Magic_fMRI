@@ -176,7 +176,7 @@ ROIS = [
         'LO', 'VO', 
         'PHT', 'PF', 
         'FEF', 'IPS',
-        'ACC', 'PCC', 
+        'ACC',
         'IFG', 'aINSULA', 
         'IFJ'
       ]

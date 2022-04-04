@@ -9,7 +9,7 @@ SUBJECTS_DIR=/home/derivatives/freesurfer
 COREGISTERED_DIR=/home/derivatives/spm12/spm12-preproc/coregistered
 # get the meanEPI image
 meanNiFTI=$COREGISTERED_DIR/$SUB/func/meanu${SUB}_task-magic_bold.nii
-# Those are the ROI names you just need to know them -- V1v=1, V1d=2 in the label images (... I guess ???)
+# Those are the ROI names you just need to know them (... I guess ???) -- V1v=1, V1d=2 in the label images
 # (https://hub.docker.com/r/nben/occipital_atlas) "older version" of neuropythy)
 roiname_array=("V1v" "V1d" "V2v" "V2d" "V3v" "V3d" "hV4" "VO1" "VO2" "PHC1" "PHC2" \
 "TO2" "TO1" "LO2" "LO1" "V3B" "V3A" "IPS0" "IPS1" "IPS2" "IPS3" "IPS4" \

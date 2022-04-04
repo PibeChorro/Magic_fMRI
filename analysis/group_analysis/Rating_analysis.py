@@ -92,7 +92,7 @@ if ANALYZED == 'moment':
 elif ANALYZED == 'video':
     data_analyzed = 'WholeVideo'
 else:
-    raise
+    raise argparse.ArgumentTypeError('Value has to be: moment or video. Your input was {}'.format(ANALYZED))
 
 # variables for path selection and data access
 HOME            = str(Path.home())
