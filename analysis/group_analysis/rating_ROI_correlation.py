@@ -91,7 +91,7 @@ if ANALYZED == 'moment':
 elif ANALYZED == 'video':
     data_analyzed = 'WholeVideo'
 else:
-    raise
+    raise argparse.ArgumentTypeError('Value has to be: moment or video. Your input was {}'.format(ANALYZED))
 
 # variables for path selection and data access
 HOME            = str(Path.home())
@@ -105,13 +105,17 @@ data_frame = pd.read_csv(filepath_or_buffer=os.path.join(DATA_DIR,'ratings_df.cs
 
 # define ROIs
 ROIS = [
-        'V1', 'V2', 'V3', 'hV4', 
-        'V3A', 'V3B', 
-        'LO', 'VO', 
-        'FEF', 'IPS',
-        'ACC', 'PCC', 
-        'IFG', 'aINSULA', 
-        'IFJ', 'PHT', 'PF'
+        'V1', 'V2', 'V3', 'hV4',            # Benson
+        'V3A', 'V3B', 'LO', 'VO', 'IPS',    # Benson
+        'PH',                               # Glasser 12d,13d (inferior temporal gyrus, temporo-occipital division LR)
+        'IPC',                              # Glasser 4d (anterior supramarginal gyrus L)
+        'IFJ', '44', '6r',                  # Glasser d15, d16 (inferior frontal gyrus LR)
+        'BA6', 'FEF',                       # Glasser 9d, 10d, 1p (superior/middle frontal gyrus LR)
+        'pACC', 'mACC', 'aACC', '8BM',      # Glasser 5d,6d,4p (ACC LR)
+        'AI', 'AVI',                        # Glasser 7d,8d (anterior insula LR)
+        'IFS', '45', 'BA46',                # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
+        'BA8', 'BA9',                       # Glasser 2p (middle frontal gyrus/DLPFC L)
+        'DMN', 'DAN', 'VAN', 'visual'       # Yeo networks
       ]
 
 VIDEO_TYPE = [
@@ -126,29 +130,137 @@ EFFECTS = [
     'Vanish'
     ]
 
+data_dict = {
+    'ROIs': ROIS,
+    'Appear T': [],
+    'Appear p': [],
+    'Change T': [],
+    'Change p': [],
+    'Vanish T': [],
+    'Vanish p': [],
+    'Magic T': [],
+    'Magic p': []
+}
+
 ############
 # ANALYSES #
 ############
 subject_ids = data_frame.ids.unique()
 for roi in ROIS:
+    for eff in EFFECTS:
+        sub_correlations = []
+
+        for sub in subject_ids:
+            ratings = data_frame.Ratings[(data_frame.ids == sub) &
+                                         (data_frame.Effect == eff) &
+                                         (data_frame.PrePost == 0)].values
+            betas   = data_frame[roi][(data_frame.ids == sub) &
+                                      (data_frame.Effect == eff) &
+                                      (data_frame.PrePost == 0)].values
+
+            [r, p] = stats.spearmanr(a=ratings, b=betas, nan_policy='omit')
+            #print ('Pearson correlation between rating and {} activity r={} (p={})'.format(roi,r,p))
+
+            sub_correlations.append(r)
+
+        # fisher z-transform correlations
+        sub_fisher_correlations = np.arctanh(sub_correlations)
+        res=pg.ttest(x=sub_fisher_correlations, y=0)
+        p_val = res['p-val'].values[0]
+        t_val = res['T'].values[0]
+
+        print ('Spearman correlation between rating and {} in effect {} tested against 0: t={:.2f} (p={:.3f})'.format(roi, eff, t_val, p_val))
+        data_dict[eff+' T'].append(t_val)
+        data_dict[eff+' p'].append(p_val)
+
+for roi in ROIS:
     sub_correlations = []
-    
+
     for sub in subject_ids:
-        ratings = data_frame.Ratings[data_frame.ids == sub].values
-        betas   = data_frame[roi][data_frame.ids == sub].values
-        
+        ratings = data_frame.Ratings[(data_frame.ids == sub) &
+                                     (data_frame.PrePost == 0)].values
+        betas = data_frame[roi][(data_frame.ids == sub) &
+                                (data_frame.PrePost == 0)].values
+
         [r, p] = stats.spearmanr(a=ratings, b=betas, nan_policy='omit')
-        #print ('Pearson correlation between rating and {} activity r={} (p={})'.format(roi,r,p))
-        
+        # print ('Pearson correlation between rating and {} activity r={} (p={})'.format(roi,r,p))
+
         sub_correlations.append(r)
-    
-    # fisher z-transform correlations
+
+        # fisher z-transform correlations
     sub_fisher_correlations = np.arctanh(sub_correlations)
-    res=pg.ttest(x=sub_fisher_correlations,y=0)
+    res = pg.ttest(x=sub_fisher_correlations, y=0)
     p_val = res['p-val'].values[0]
     t_val = res['T'].values[0]
-    
-    print ('Spearman correlation between rating and {} tested against 0: t={:.2f} (p={:.3f})'.format(roi,t_val,p_val))   
+
+    print('Spearman correlation between rating and {} in all Magic tested against 0: t={:.2f} (p={:.3f})'.format(roi, t_val, p_val))
+    data_dict['Magic T'].append(t_val)
+    data_dict['Magic p'].append(p_val)
+
+results_df = pd.DataFrame(data=data_dict, columns=data_dict.keys())
+results_df.to_csv(path_or_buf=os.path.join(DATA_DIR, 'ROI-Rating_corr_pre.csv'), index=False)
+
+data_dict = {
+    'ROIs': ROIS,
+    'Appear T': [],
+    'Appear p': [],
+    'Change T': [],
+    'Change p': [],
+    'Vanish T': [],
+    'Vanish p': [],
+    'Magic T': [],
+    'Magic p': []
+}
+
+for roi in ROIS:
+    for eff in EFFECTS:
+        sub_correlations = []
+
+        for sub in subject_ids:
+            ratings = data_frame.Ratings[(data_frame.ids == sub) &
+                                         (data_frame.Effect == eff)].values
+            betas   = data_frame[roi][(data_frame.ids == sub) &
+                                      (data_frame.Effect == eff)].values
+
+            [r, p] = stats.spearmanr(a=ratings, b=betas, nan_policy='omit')
+            #print ('Pearson correlation between rating and {} activity r={} (p={})'.format(roi,r,p))
+
+            sub_correlations.append(r)
+
+        # fisher z-transform correlations
+        sub_fisher_correlations = np.arctanh(sub_correlations)
+        res=pg.ttest(x=sub_fisher_correlations, y=0)
+        p_val = res['p-val'].values[0]
+        t_val = res['T'].values[0]
+
+        print ('Spearman correlation between rating and {} in effect {} tested against 0: t={:.2f} (p={:.3f})'.format(roi, eff, t_val, p_val))
+        data_dict[eff+' T'].append(t_val)
+        data_dict[eff+' p'].append(p_val)
+
+for roi in ROIS:
+    sub_correlations = []
+
+    for sub in subject_ids:
+        ratings = data_frame.Ratings[(data_frame.ids == sub)].values
+        betas = data_frame[roi][(data_frame.ids == sub)].values
+
+        [r, p] = stats.spearmanr(a=ratings, b=betas, nan_policy='omit')
+        # print ('Pearson correlation between rating and {} activity r={} (p={})'.format(roi,r,p))
+
+        sub_correlations.append(r)
+
+        # fisher z-transform correlations
+    sub_fisher_correlations = np.arctanh(sub_correlations)
+    res = pg.ttest(x=sub_fisher_correlations, y=0)
+    p_val = res['p-val'].values[0]
+    t_val = res['T'].values[0]
+
+    print('Spearman correlation between rating and {} in all Magic tested against 0: t={:.2f} (p={:.3f})'.format(roi, t_val, p_val))
+    data_dict['Magic T'].append(t_val)
+    data_dict['Magic p'].append(p_val)
+
+results_df = pd.DataFrame(data=data_dict, columns=data_dict.keys())
+results_df.to_csv(path_or_buf=os.path.join(DATA_DIR, 'ROI-Rating_corr_all.csv'), index=False)
     
 ##################
 # WRITE LOG FILE #

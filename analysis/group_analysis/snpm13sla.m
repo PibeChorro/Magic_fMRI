@@ -28,7 +28,7 @@ softwareName        = 'snpm13';
 % get the data from the first level analysis pipeline you want
 pipelineName        = 'spm12-fla';
 brainMask           = 'WholeBrain';         % whole brain or ROI
-conditionsAnalyzed  = 'VideoTypes';
+conditionsAnalyzed  = 'MagicEffects';
 smoothKernelSize	= 6;   % in mm
 smoothKernelSpace   = 'mni';
 % combine above specifications for a well structured file hierarchy
@@ -100,7 +100,7 @@ for C = 1:nContrasts
             end
 
             matlabbatch{1}.spm.tools.snpm.des.OneSampT.P = contrastsDirs';
-            matlabbatch{1}.spm.tools.snpm.des.OneSampT.dir = {fullfile(secLevelDir,specialMomentGLMName,SPM.xCon(C).name)};
+            matlabbatch{1}.spm.tools.snpm.des.OneSampT.dir = {fullfile(secLevelDir,wholeVideoGLMName,SPM.xCon(C).name)};
 
             spm('defaults', 'FMRI');
             spm_jobman('run', matlabbatch);

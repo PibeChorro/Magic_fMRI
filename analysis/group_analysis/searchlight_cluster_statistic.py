@@ -232,14 +232,14 @@ elif WHAT == 'mag-nomag':
     DATA_TO_USE = 'decode_magic_vs_nomagic'
     NUM_LABELS  = 2
 else:
-    raise
+    raise argparse.ArgumentTypeError('Value has to be: effect, pre-post or mag-nomag. Your input was {}'.format(WHAT))
 
 if ANALYZED == 'moment':
     data_analyzed = 'SpecialMoment'
 elif ANALYZED == 'video':
     data_analyzed = 'WholeVideo'
 else:
-    raise
+    raise argparse.ArgumentTypeError('Value has to be: moment or video. Your input was {}'.format(ANALYZED))
     
 DATA_DIR        = os.path.join(DERIVATIVES_DIR, 'decoding', 'decoding_magic', 
                                DATA_TO_USE, DATA+'_videos','over_'+ OVER, 

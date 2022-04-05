@@ -128,7 +128,7 @@ parser = argparse.ArgumentParser()
 # add all the input arguments
 parser.add_argument("--what", "-w", nargs="?",const='effect', default='effect', 
                     type=str)
-parser.add_argument("--data", "-d", nargs="?", const='pre', default='pre', 
+parser.add_argument("--data", "-d", nargs="?", const='pre', default='pre',
                     type=str)
 parser.add_argument("--over",  "-o",   nargs='?',  const='objects', 
                     default='objects')
@@ -158,7 +158,7 @@ elif WHAT == 'mag-nomag':
     DATA_TO_USE = 'decode_magic_vs_nomagic'
     NUM_LABELS  = 2
 else:
-    raise
+    raise argparse.ArgumentTypeError('Value has to be: effect, pre-post, or mag-nomag. Your input was {}'.format(WHAT))
 DATA_DIR        = os.path.join(DERIVATIVES_DIR, 'decoding', 'decoding_magic', 
                                DATA_TO_USE, DATA+'_videos','over_'+ OVER, 
                                'SpecialMoment', 'ROI-analysis')
@@ -176,7 +176,7 @@ ROIS = [
         'LO', 'VO', 
         'PHT', 'PF', 
         'FEF', 'IPS',
-        'ACC', 'PCC', 
+        'ACC',
         'IFG', 'aINSULA', 
         'IFJ'
       ]

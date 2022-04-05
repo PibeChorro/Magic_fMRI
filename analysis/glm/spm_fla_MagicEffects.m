@@ -134,9 +134,9 @@ fps         = 25;
 frameTime   = 1/fps;
 
 %% Define what to do
-do.SpecifyDesign    = 1;
-do.loadlog          = 1; % load LOG files!
-do.estimate         = 1;
+do.SpecifyDesign    = 0;
+do.loadlog          = 0; % load LOG files!
+do.estimate         = 0;
 do.DefContrasts     = 1;
 % Which model to do
 do.wholeVideo       = 1;
@@ -517,55 +517,55 @@ for s = 1:length(subNames)
         % General settings
         % Contrast Names:
         ContrastNames = ...
-            {'Magic > Control';                     ... %1
-            'Control > Magic';                      ... %2
-            'Magic > Control Before';               ... %3
-            'Control > Magic Before';               ... %4
-            'Magic Before > Magic After';           ... %5
-            'Magic After > Magic Before';           ... %6
-            'Magic > Surprise Before';              ... %7
-            'Surpise > Magic Before';               ... %8
-            'Surprise > Control';                   ... %9
-            'Control > Surprise';                   ... %10
-            'Magic > Control After';                ... %11
-            'Control > Magic After';                ... %12
-            'Magic > Surprise After';               ... %13
-            'Surpise > Magic After';                ... %14
+            {'Magic vs Control';                     ... %1
+            'Control vs Magic';                      ... %2
+            'Magic vs Control Before';               ... %3
+            'Control vs Magic Before';               ... %4
+            'Magic Before vs Magic After';           ... %5
+            'Magic After vs Magic Before';           ... %6
+            'Magic vs Surprise Before';              ... %7
+            'Surpise vs Magic Before';               ... %8
+            'Surprise vs Control';                   ... %9
+            'Control vs Surprise';                   ... %10
+            'Magic vs Control After';                ... %11
+            'Control vs Magic After';                ... %12
+            'Magic vs Surprise After';               ... %13
+            'Surpise vs Magic After';                ... %14
             'MagPre-ConPre vs MagPost-ConPost';     ... %15
             'MagPost-ConPost vs MagPre-ConPre';     ... %16
-            'Appear Before > Appear After';         ... %17
-            'Vanish Before > Vanish After';         ... %18
-            'Change Before > Change After';         ... %19
-            'Appear After > Appear Before';         ... %20
-            'Vanish After > Vanish Before';         ... %21
-            'Change After > Change Before';         ... %22
-            'Appear > Control';                     ... %23
-            'Control > Appear';                     ... %24
-            'Vanish > Control';                     ... %25
-            'Control > Vanish';                     ... %26
-            'Change > Control';                     ... %27
-            'Control > Change';                     ... %28
-            'Appear > Control Before';              ... %29
-            'Control > Appear Before';              ... %30
-            'Vanish > Control Before';              ... %31
-            'Control > Vanish Before';              ... %32
-            'Change > Control Before';              ... %33
-            'Control > Change Before';              ... %34
-            'Appear > Surprise Before';             ... %35
-            'Vanish > Surprise Before';             ... %36
-            'Change > Surprise Before';             ... %37
-            'Appear > Control After';               ... %38
-            'Vanish > Control After';               ... %39
-            'Change > Control After';               ... %40
-            'Appear > Surprise After';              ... %41
-            'Vanish > Surprise After';              ... %42
-            'Change > Surprise After';              ... %43
+            'Appear Before vs Appear After';         ... %17
+            'Vanish Before vs Vanish After';         ... %18
+            'Change Before vs Change After';         ... %19
+            'Appear After vs Appear Before';         ... %20
+            'Vanish After vs Vanish Before';         ... %21
+            'Change After vs Change Before';         ... %22
+            'Appear vs Control';                     ... %23
+            'Control vs Appear';                     ... %24
+            'Vanish vs Control';                     ... %25
+            'Control vs Vanish';                     ... %26
+            'Change vs Control';                     ... %27
+            'Control vs Change';                     ... %28
+            'Appear vs Control Before';              ... %29
+            'Control vs Appear Before';              ... %30
+            'Vanish vs Control Before';              ... %31
+            'Control vs Vanish Before';              ... %32
+            'Change vs Control Before';              ... %33
+            'Control vs Change Before';              ... %34
+            'Appear vs Surprise Before';             ... %35
+            'Vanish vs Surprise Before';             ... %36
+            'Change vs Surprise Before';             ... %37
+            'Appear vs Control After';               ... %38
+            'Vanish vs Control After';               ... %39
+            'Change vs Control After';               ... %40
+            'Appear vs Surprise After';              ... %41
+            'Vanish vs Surprise After';              ... %42
+            'Change vs Surprise After';              ... %43
             % Interaction effects
             'AppPre-ConPre vs AppPost-ConPost';     ... %44
-            'VanPre-ConPre vs Vanpost-ConPost';     ... %45
+            'VanPre-ConPre vs VanPost-ConPost';     ... %45
             'ChaPre-ConPre vs ChaPost-ConPost';     ... %46
             'AppPost-ConPost vs AppPre-ConPre';     ... %47
-            'Vanpost-ConPost vs Vanpost-ConPost';   ... %48
+            'Vanpost-ConPost vs VanPre-ConPre';     ... %48
             'ChaPost-ConPost vs ChaPre-ConPre';     ... %49
             % Contrats to outrule the timeconfound by comparing run 1vs2
             % and run 2vs3 - the same time difference, but the first is pre

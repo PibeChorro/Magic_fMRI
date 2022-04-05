@@ -189,7 +189,7 @@ try:
         my_decoder          = SVC(kernel='linear', C=SVM_C)
     # make LDA the default in case something completely different was given
     else:
-        raise
+        raise argparse.ArgumentTypeError('Value has to be: LDA or SVM. Your input was {}'.format(DECODER))
             
     if RUNS_TO_USE == 'pre':
         runs_of_interest = [1,2,5,6,9,10]
@@ -198,7 +198,7 @@ try:
     elif RUNS_TO_USE == 'all':
         runs_of_interest = [1,2,3,4,5,6,7,8,9,10,11,12] 
     else:
-        raise
+        raise argparse.ArgumentTypeError('Value has to be: pre, post or all. Your input was {}'.format(RUNS_TO_USE))
     # variables for path selection and data access
     HOME            = str(Path.home())
     PROJ_DIR        = os.path.join(HOME, 'Documents/Magic_fMRI/DATA/MRI')
@@ -227,15 +227,18 @@ try:
         os.makedirs(RESULTS_DIR)
     
     # define ROIs
+    # define ROIs
     ROIS = [
-            'V1', 'V2', 'V3', 'hV4', 
-            'V3A', 'V3B', 
-            'LO', 'VO', 
-            'IPS',
-            'PHT', 'PF',
-            'FEF', 'IFG', 'IFJ',
-            'ACC', 'PCC', 
-            'aINSULA',
+            'V1', 'V2', 'V3', 'hV4',  # Benson
+            'V3A', 'V3B', 'LO', 'VO', 'IPS',  # Benson
+            'PH',  # Glasser 12d,13d (inferior temporal gyrus, temporo-occipital division LR)
+            'IPC',  # Glasser 4d (anterior supramarginal gyrus L)
+            'IFJ', '44', '6r',  # Glasser d15, d16 (inferior frontal gyrus LR)
+            'BA6', 'FEF',  # Glasser 9d, 10d, 1p (superior/middle frontal gyrus LR)
+            'pACC', 'mACC', 'aACC', '8BM',  # Glasser 5d,6d,4p (ACC LR)
+            'AI', 'AVI',  # Glasser 7d,8d (anterior insula LR)
+            'IFS', '45', 'BA46',  # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
+            'BA8', 'BA9'  # Glasser 2p (middle frontal gyrus/DLPFC L)
             '3rd-ventricle'
           ]
     
@@ -354,7 +357,7 @@ try:
         ps = [[train1, test1], [train2,test2],
               [train3, test3], [train4,test4]]
     else:
-        raise
+        raise argparse.ArgumentTypeError('Value has to be: objects or tricks. Your input was {}'.format(OVER))
     
     # THIRD STEP
     # read in all beta from regressors of interest (flatten and then combine in on

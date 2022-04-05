@@ -29,17 +29,18 @@ ARGS = parser.parse_args()
 sub             = ARGS.sub
 
 # define ROIs
-all_ROIs = ['V1', 'V2', 'V3', 'hV4', 
-        'V3A', 'V3B', 
-        'LO1', 'LO2', 
-        'VO1', 'VO2', 
-        'TO1', 'TO2', 
-        'FEF', 'SPL1',
-        'PHC1', 'PHC2',
-        'IPS1', 'IPS2', 'IPS3', 'IPS4','IPS5',
-        'ACC', 'PCC', 'IFG', 'IFJ', 'aINSULA',
-        'PHT', 'PF'          # PHT corresponds to inferior temporal gyrus and PF to anterior supra marginal gyrus in Danek et al 2014
-        ]
+ROIS = [
+        'V1', 'V2', 'V3', 'hV4',            # Benson
+        'V3A', 'V3B', 'LO', 'VO', 'IPS',    # Benson
+        'PH',                               # Glasser 12d,13d (inferior temporal gyrus, temporo-occipital division LR)
+        'IPC',                              # Glasser 4d (anterior supramarginal gyrus L)
+        'IFJ', '44', '6r',                  # Glasser d15, d16 (inferior frontal gyrus LR)
+        'BA6', 'FEF',                       # Glasser 9d, 10d, 1p (superior/middle frontal gyrus LR)
+        'pACC', 'mACC', 'aACC', '8BM',      # Glasser 5d,6d,4p (ACC LR)
+        'AI', 'AVI',                        # Glasser 7d,8d (anterior insula LR)
+        'IFS', '45', 'BA46',                # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
+        'BA8', 'BA9'                        # Glasser 2p (middle frontal gyrus/DLPFC L)
+      ]
 
 # declare all path names
 home = str(Path.home())
