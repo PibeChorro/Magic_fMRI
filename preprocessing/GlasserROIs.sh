@@ -3,10 +3,11 @@
 # Executable bash file to queue on the headnode to run the freesurfer docker container for ROI generation
 # VARIABLES
 SUB=${1}
-PROJ_DIR=$HOME/Documents/Master_Thesis/DATA/MRI
+PROJ_DIR=$HOME/Documents/Magic_fMRI/DATA/MRI
 FS_CONTAINER_NAME=agbartels_freesurfer_${SUB}
-SUBJECTS_DIR=${PROJ_DIR}/derivatives/freesurfer
-COREGISTERED_DIR=${PROJ_DIR}/derivatives/spm12/spm12-preproc/coregistered
+SUBJECTS_DIR=/home/derivatives/freesurfer
+COREGISTERED_DIR=/home/derivatives/spm12/spm12-preproc/coregistered
+# get the meanEPI image
 meanNiFTI=$COREGISTERED_DIR/$SUB/func/meanu${SUB}_task-magic_bold.nii
 bilateral_rois=("IFJ" "44" "6r" "BA6" "FEF" "pACC" "mACC" "aACC" "8BM" "AI" "AVI" "PH")
 left_lateral_rois=("IFS" "45" "BA46" "BA8" "BA9" "IPC")
