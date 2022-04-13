@@ -83,7 +83,7 @@ softwareName        = 'spm12';              % software used to create preprocess
 
 % specify the name of the analysis pipeline
 analysisPipeline    = 'spm12-fla';          % how is the folder named that contains first level results
-brainMask           = 'WholeBrain';         % whole brain or ROI
+brainMask           = 'WholeBrain_24MP';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';         % Magic, Control and Surprise videos are one regressor each (Response as well, but that is less important)
 smoothKernelSize	= 6;                    % in mm
 smoothKernelSpace   = 'mni';                % mni or native (mni makes more sense, native rather for explorative analysis... maybe)
@@ -132,9 +132,9 @@ fps         = 25;
 frameTime   = 1/fps;
 
 %% Define what to do
-do.SpecifyDesign    = 0;
-do.loadlog          = 0; % load LOG files!
-do.estimate         = 0;
+do.SpecifyDesign    = 1;
+do.loadlog          = 1; % load LOG files!
+do.estimate         = 1;
 do.DefContrasts     = 1;
 % Which model to do
 do.wholeVideo       = 1;
@@ -157,7 +157,7 @@ fla.numConditions   = length(fla.conditionNames);
 numMag              = 6;
 numCon              = 6;
 numSur              = 1;
-numRaPara           = 6; % default number of realignment parameter, in model estimation overwritten but still 6
+numRaPara           = 24; % default number of realignment parameter, in model estimation overwritten but still 24
 % how many blocks we had
 numBlocks           = 3;
 % should the movement be used as regressors of no interest
@@ -242,22 +242,27 @@ for s = 1:length(subNames)
                 % Define names for 'Motion Regressors' (aka. Realignment
                 % Parameters)
                 raParamNames = [
-                    'rp 1';...
-                    'rp 2';...
-                    'rp 3';...
-                    'rp 4';...
-                    'rp 5';...
-                    'rp 6'
+                    'rp01'; 'rp02'; 'rp03';...  % translation
+                    'rp04'; 'rp05'; 'rp06';...  % rotation
+                    'rp07'; 'rp08'; 'rp09';...  % translation 1st derivative
+                    'rp10'; 'rp11'; 'rp12';...  % rotation 1st derivative
+                    'rp13'; 'rp14'; 'rp15';...  % translation square
+                    'rp16'; 'rp17'; 'rp18';...  % rotation square
+                    'rp19'; 'rp20'; 'rp21';...  % translation 1st derivative sqaure
+                    'rp22'; 'rp23'; 'rp24'      % rotation 1st derivative square
                     ];
                 numRaPara = length(raParamNames);
                 
                 % Load alignment parameters
-                raParamValues    = load(AlignmentFiles(r,:)); % get realignment parameters
-                
+                raParamValues       = load(AlignmentFiles(r,:));    % get realignment parameters
+                [~, raDeriValues]   = gradient(raParamValues);      % the first return value is the derivative along x axis
+                nuis                = zscore([raParamValues raDeriValues]); 
+                quadterms           = nuis.^ 2;
+                all_raParams        = [nuis zscore(quadterms)];
                 % Add realignment parameters as regressors of no interest.
                 for P = 1:length (raParamNames)
                     matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(P).name = raParamNames(P,:);
-                    matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(P).val  = raParamValues(:,P);
+                    matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(P).val  = all_raParams(:,P);
                 end
             end
         end

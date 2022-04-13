@@ -88,7 +88,7 @@ end
 softwareName        = 'spm12';  
 % get the data from the first level analysis pipeline you want
 pipelineName        = 'spm12-fla';
-brainMask           = 'WholeBrain';         % whole brain or ROI
+brainMask           = 'WholeBrain_24MP';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';
 smoothKernelSize	= 6;   % in mm
 smoothKernelSpace   = 'mni';
@@ -113,7 +113,7 @@ do.estimate           = 1;
 do.DefContrasts       = 1;
 % Which model to do
 do.wholeVideo       = 1;
-do.specialMoment    = ;
+do.specialMoment    = 1;
 
 %% Settings
 % specify format for folder numeration
