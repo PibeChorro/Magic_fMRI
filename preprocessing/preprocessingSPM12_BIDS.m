@@ -5,10 +5,11 @@ function preprocessingSPM12_BIDS()
 % Further changed by VP 01/2021
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "raw_data")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    =  uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -91,13 +92,13 @@ DICOMsExtensions = {'**.IMA','**.ima'}; % extension you care about
 %..............................WHAT TO DO.................................%
 do.overwrite        = 1;
 do.realignment      = 0; % 1 = realigning and unwarp;
-do.sliceTimeCorr    = 1; % 1 = slice time correction (using slice TIMES); 
-do.coregistration   = ''; % 'manual' or 'auto';
-do.segmentation     = 0;
-do.normalisation    = 0; 
+do.sliceTimeCorr    = 0; % 1 = slice time correction (using slice TIMES); 
+do.coregistration   = 'auto'; % 'manual' or 'auto';
+do.segmentation     = 1;
+do.normalisation    = 1; 
 do.smoothing        = 1; %Smoothing Flag, set to 1 if you want to smooth. 
 do.smoothNorm       = 'mni'; % Smooth normalize data = 'mni', native data = 'native' or 'both'
-do.smoothingSize    = 9; % in mm 
+do.smoothingSize    = 6; % in mm 
 
 % already assign realignment parameter names
 raParamNames = {'x-Axis', 'y-Axis', 'z-Axis',...
@@ -109,19 +110,18 @@ spm fmri;
 % create a BIDS conform directory structure for the NIFTIS
 % first we need to create a cell containing the subject names
 softwareName    = 'spm12';
-pipelineName    = 'spm12-preproc';
+pipelineName    = 'spm12-preproc_nordic';
 folders         = dir(fullfile(rawDir,[subPrefix, '*']));
 subNames        = {folders(:).name}; 
 
 %% start to perform the preprocessing
-for ss = 1:length(subNames) % For all subjects do each ...
+for ss = 1%:length(subNames) % For all subjects do each ...
     % get the unprocessed niftis
-    rawSubDir       = fullfile(rawDir,subNames{ss});
+    rawSubDir       = fullfile(derivativesDir, 'nordic' ,subNames{ss});
     rawSubFuncDir   = fullfile(rawSubDir,'func');
     
     % check if structural volume exists if needed
-    rawSubAnatImg   = dir(fullfile(rawSubDir, anatDir, ['*' anatModality '.nii']));
-    rawSubAnatImg   = fullfile(rawSubAnatImg.folder, rawSubAnatImg.name);
+    rawSubAnatImg   = spm_select('FPList', fullfile(rawSubDir, anatDir),'image', ['^' subNames{ss} '_' anatModality '.nii']);
     
     %% create a BIDS conform file structure for every subject
     % !!!only the derivatives folder is created here. The rest
