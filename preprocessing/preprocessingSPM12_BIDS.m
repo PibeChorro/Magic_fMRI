@@ -5,10 +5,11 @@ function preprocessingSPM12_BIDS()
 % Further changed by VP 01/2021
 
 %% Define important details of your file structure and location
+homedir = '/home/vplikat';
 % Set root directory
 fprintf(['Please select your project folder.'...
     '(ideally it should contain a folder named "raw_data")\n\n'])
-rootDir    = '/Users/vpl/Documents/Master_Thesis/DATA/MRI'; % uigetdir(homedir, 'Select Project Folder');
+rootDir    = uigetdir(homedir, 'Select Project Folder');
 if rootDir == 0
     error('No folder was selected --> I terminate the script')
 end
@@ -27,8 +28,7 @@ end
 DICOMprefix = 'sMag'; % input (['Please specify the prefix of your participant data in your SOURCEDATA directory.\n' ...
 %     '(like p for participant or s for subject. It has to be unique so that only subject folders are selected):\n\n'],'s');
 
-DICOMfolders = dir(fullfile(sourceDir,[DICOMprefix, '*']));
-DICOMsubNames = {DICOMfolders(:).name}; 
+DICOMsubNames = cellstr(spm_select('FPList', sourceDir, 'dir',['^' DICOMprefix]));
 
 % Set rawdata directory.
 rawDir     = fullfile(rootDir, 'rawdata');
@@ -90,14 +90,14 @@ DICOMsExtensions = {'**.IMA','**.ima'}; % extension you care about
 %% Decide what to do
 %..............................WHAT TO DO.................................%
 do.overwrite        = 1;
-do.realignment      = 0; % 1 = realigning and unwarp;
+do.realignment      = 1; % 1 = realigning and unwarp;
 do.sliceTimeCorr    = 1; % 1 = slice time correction (using slice TIMES); 
-do.coregistration   = ''; % 'manual' or 'auto';
-do.segmentation     = 0;
-do.normalisation    = 0; 
+do.coregistration   = 'auto'; % 'manual' or 'auto';
+do.segmentation     = 1;
+do.normalisation    = 1; 
 do.smoothing        = 1; %Smoothing Flag, set to 1 if you want to smooth. 
 do.smoothNorm       = 'mni'; % Smooth normalize data = 'mni', native data = 'native' or 'both'
-do.smoothingSize    = 9; % in mm 
+do.smoothingSize    = 6; % in mm 
 
 % already assign realignment parameter names
 raParamNames = {'x-Axis', 'y-Axis', 'z-Axis',...
@@ -110,8 +110,7 @@ spm fmri;
 % first we need to create a cell containing the subject names
 softwareName    = 'spm12';
 pipelineName    = 'spm12-preproc';
-folders         = dir(fullfile(rawDir,[subPrefix, '*']));
-subNames        = {folders(:).name}; 
+subNames        = cellstr(spm_select('List', rawDir, 'dir',['^' subPrefix]));
 
 %% start to perform the preprocessing
 for ss = 1:length(subNames) % For all subjects do each ...
@@ -120,8 +119,13 @@ for ss = 1:length(subNames) % For all subjects do each ...
     rawSubFuncDir   = fullfile(rawSubDir,'func');
     
     % check if structural volume exists if needed
-    rawSubAnatImg   = dir(fullfile(rawSubDir, anatDir, ['*' anatModality '.nii']));
-    rawSubAnatImg   = fullfile(rawSubAnatImg.folder, rawSubAnatImg.name);
+    % using spm_select 
+    % 'FPList' fullpath list - output is a list of files matching the 
+    % filter with absolut path
+    % directory where to look for the image
+    % the filter - ^ is used so that the string HAS TO start with the
+    % filter
+    rawSubAnatImg   = spm_select('FPList',fullfile(rawSubDir, anatDir), ['^' subNames{ss} '_' anatModality '.nii']);
     
     %% create a BIDS conform file structure for every subject
     % !!!only the derivatives folder is created here. The rest
@@ -260,13 +264,13 @@ for ss = 1:length(subNames) % For all subjects do each ...
             warning(message)
         end
         
-        raFiles = dir(fullfile(realignedDir, subNames{ss}, 'func', '*.txt'));
+        raFiles = cellstr(spm_select('FPList', fullfile(realignedDir, subNames{ss},'func'),'.txt'));
         
         for run = 1:nruns 
             % read in the created realignment text file and plot them in a
             % firgure and save the figure 
             try
-                [fid, mes] = fopen(fullfile(raFiles(run).folder,raFiles(run).name));
+                [fid, mes] = fopen(raFiles{run});
                 realignmentMatrix = textscan(fid, '%f%f%f%f%f%f');
                 % create figure to plot realigment parameters in
                 fig = figure;
@@ -306,12 +310,12 @@ for ss = 1:length(subNames) % For all subjects do each ...
     if do.sliceTimeCorr
         currentDir          = fullfile(realignedDir, subNames{ss}, 'func');
         folderContent       = dir(fullfile(currentDir, ['u' subNames{ss} '_' taskName '_' 'run*'])); 
-        DICOMfolderContent  = dir(fullfile(sourceDir, DICOMsubNames{ss}, 'func', 'run*'));
+        DICOMfolderContent  = dir(fullfile(DICOMsubNames{ss}, 'func', 'run*'));
         nruns               = length(folderContent);
         fprintf('SLICE TIME CORRECTION\n\n')
         for run=1:nruns % for number of runs
             % load a dicom header that contains information needed for analysis
-            dicomDir           = fullfile(sourceDir,DICOMsubNames{ss},'func',DICOMfolderContent(run).name);
+            dicomDir           = fullfile(DICOMsubNames{ss},'func',DICOMfolderContent(run).name);
             % select all dicom files from the current run
             dicomFiles = [];
             for ext = 1:length(DICOMsExtensions)
@@ -401,14 +405,13 @@ for ss = 1:length(subNames) % For all subjects do each ...
                 warning(message)
         end
         
-        meanEpi = dir(fullfile(coregisteredDir, subNames{ss}, 'func' ,['meanu' '*.nii']));
-        meanEpi = fullfile(coregisteredDir, subNames{ss}, 'func', meanEpi.name);
+        meanEpi = spm_select('FPList', fullfile(coregisteredDir, subNames{ss}, 'func'), '^meanu');
         if strcmpi(do.coregistration, 'manual')
             % TODO: this is not up to date and won't work
             fprintf('MANUAL COREGISTRATION\n')
             fprintf('EPI scans [meanEPI] -> Structural \n');
             
-            mancoreg(cellstr(rawSubAnatImg),sourceimage)
+            mancoreg(cellstr(rawSubAnatImg),meanEpi)
             
         elseif strcmpi(do.coregistration, 'auto') || do.coregistration 
             
@@ -452,27 +455,27 @@ for ss = 1:length(subNames) % For all subjects do each ...
         matlabbatch{1}.spm.spatial.preproc.channel.biasreg  = 0.001;
         matlabbatch{1}.spm.spatial.preproc.channel.biasfwhm = 60;
         matlabbatch{1}.spm.spatial.preproc.channel.write    = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(1).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,1'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(1).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,1')};
         matlabbatch{1}.spm.spatial.preproc.tissue(1).ngaus  = 1;
         matlabbatch{1}.spm.spatial.preproc.tissue(1).native = [1 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(1).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(2).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,2'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(2).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,2')};
         matlabbatch{1}.spm.spatial.preproc.tissue(2).ngaus  = 1;
         matlabbatch{1}.spm.spatial.preproc.tissue(2).native = [1 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(2).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(3).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,3'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(3).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,3')};
         matlabbatch{1}.spm.spatial.preproc.tissue(3).ngaus  = 2;
         matlabbatch{1}.spm.spatial.preproc.tissue(3).native = [1 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(3).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(4).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,4'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(4).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,4')};
         matlabbatch{1}.spm.spatial.preproc.tissue(4).ngaus  = 3;
         matlabbatch{1}.spm.spatial.preproc.tissue(4).native = [1 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(4).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(5).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,5'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(5).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,5')};
         matlabbatch{1}.spm.spatial.preproc.tissue(5).ngaus  = 4;
         matlabbatch{1}.spm.spatial.preproc.tissue(5).native = [1 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(5).warped = [0 0];
-        matlabbatch{1}.spm.spatial.preproc.tissue(6).tpm    = {'/Users/jasper/spm12/tpm/TPM.nii,6'};
+        matlabbatch{1}.spm.spatial.preproc.tissue(6).tpm    = {fullfile(homedir,'spm12/tpm/TPM.nii,6')};
         matlabbatch{1}.spm.spatial.preproc.tissue(6).ngaus  = 2;
         matlabbatch{1}.spm.spatial.preproc.tissue(6).native = [0 0];
         matlabbatch{1}.spm.spatial.preproc.tissue(6).warped = [0 0];
@@ -604,7 +607,7 @@ for ss = 1:length(subNames) % For all subjects do each ...
         matlabbatch{1}.spm.spatial.smooth.data      = cellstr(alltargets);
         matlabbatch{1}.spm.spatial.smooth.fwhm      = repmat(do.smoothingSize,1,3); % Set at the beginning.
         matlabbatch{1}.spm.spatial.smooth.dtype     = 0;
-        matlabbatch{1}.spm.spatial.smooth.im        = 0;
+        matlabbatch{1}.spm.spatial.smooth.im        = 1;
         matlabbatch{1}.spm.spatial.smooth.prefix    = ['s' num2str(do.smoothingSize)];
         
         spm('defaults', 'FMRI');
