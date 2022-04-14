@@ -24,47 +24,55 @@ NIfTI_shape = (96, 96, 62)
 parser = argparse.ArgumentParser()
 
 # add all the input arguments
-parser.add_argument("--sub",        "-s",                               default='sub-11')         # subject
-ARGS = parser.parse_args()
-sub             = ARGS.sub
+parser.add_argument("--sub",        "-s",                               default='sub-01')         # subject
+ARGS    = parser.parse_args()
+sub     = ARGS.sub
 
 # define ROIs
-ROIS = [
-        'V1', 'V2', 'V3', 'hV4',            # Benson
-        'V3A', 'V3B', 'LO', 'VO', 'IPS',    # Benson
-        'PH',                               # Glasser 12d,13d (inferior temporal gyrus, temporo-occipital division LR)
-        'IPC',                              # Glasser 4d (anterior supramarginal gyrus L)
-        'IFJ', '44', '6r',                  # Glasser d15, d16 (inferior frontal gyrus LR)
-        'BA6', 'FEF',                       # Glasser 9d, 10d, 1p (superior/middle frontal gyrus LR)
-        'pACC', 'mACC', 'aACC', '8BM',      # Glasser 5d,6d,4p (ACC LR)
-        'AI', 'AVI',                        # Glasser 7d,8d (anterior insula LR)
-        'IFS', '45', 'BA46',                # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
-        'BA8', 'BA9'                        # Glasser 2p (middle frontal gyrus/DLPFC L)
-      ]
+ALL_ROIS = [
+    'V1', 'V2', 'V3', 'hV4',                            # Benson
+    'V3A', 'V3B',                                       # Benson
+    'LO1', 'LO2', 'VO1', 'VO2',                         # Benson
+    'IPS0', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5',     # Benson
+    'IFJ', '44', '6r',                  # Glasser d15, d16 (inferior frontal gyrus LR)
+    'BA6', 'FEF',                       # Glasser 9d, 10d, 1p (superior/middle frontal gyrus LR)
+    'pACC', 'mACC', 'aACC', '8BM',      # Glasser 5d,6d,4p (ACC LR)
+    'AI', 'AVI',                        # Glasser 7d,8d (anterior insula LR)
+    'PH',                               # Glasser 12d,13d (inferior temporal gyrus, temporo-occipital division LR)
+    'IFS', '45', 'BA46',    # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
+    'BA8', 'BA9',           # Glasser 2p (middle frontal gyrus/DLPFC L)
+    'IPC'                   # Glasser 4d (anterior supramarginal gyrus L)
+]
+
+# LEFT_LATERAL_ROIS = [
+#     'IFS', '45', 'BA46',    # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
+#     'BA8', 'BA9',           # Glasser 2p (middle frontal gyrus/DLPFC L)
+#     'IPC'                   # Glasser 4d (anterior supramarginal gyrus L)
+# ]
 
 # declare all path names
 home = str(Path.home())
-surfer_dir = os.path.join (home, 'Documents/Master_Thesis/DATA/MRI/derivatives/freesurfer/')    # the freesurfer directory              # 
+surfer_dir = os.path.join (home, 'Documents/Magic_fMRI/DATA/MRI/derivatives/freesurfer/')    # the freesurfer directory
 
-ROI_dir = os.path.join(surfer_dir,sub,'ROIs')
-corrected_ROI_dir = os.path.join(surfer_dir,sub,'corrected_ROIs')
+ROI_dir = os.path.join(surfer_dir, sub, 'ROIs')
+corrected_ROI_dir = os.path.join(surfer_dir, sub, 'corrected_ROIs')
 if not os.path.exists(corrected_ROI_dir):
     os.makedirs(corrected_ROI_dir)
 
 # iterate over all ROIs except the last one, those will be ROI0
-for roi0, ROI0 in enumerate (all_ROIs[:-1]):
+for roi0, ROI0 in enumerate(ALL_ROIS[:-1]):
     # iterate over all following ROIs, those will be ROI1
-    for roi1, ROI1 in enumerate (all_ROIs[roi0+1:]):
+    for roi1, ROI1 in enumerate(ALL_ROIS[roi0 + 1:]):
 
         # get a list containing all NIfTI files belonging to the two ROIs
-        ROI0_list = glob.glob(os.path.join(ROI_dir,'*'+ROI0+'.nii'))
-        ROI1_list = glob.glob(os.path.join(ROI_dir,'*'+ROI1+'.nii'))
+        ROI0_list = glob.glob(os.path.join(ROI_dir, '*'+ROI0+'.nii'))
+        ROI1_list = glob.glob(os.path.join(ROI_dir, '*'+ROI1+'.nii'))
         
         # check if the current ROIs already have been changed. If so, select the changed one
-        if os.path.exists(os.path.join (corrected_ROI_dir,ROI0 + '.nii')):
-            ROI0_list = glob.glob(os.path.join(corrected_ROI_dir,ROI0 +'.nii'))
-        if os.path.exists(os.path.join (corrected_ROI_dir,ROI1 + '.nii')):
-            ROI1_list = glob.glob(os.path.join(corrected_ROI_dir,ROI1 +'.nii'))
+        if os.path.exists(os.path.join(corrected_ROI_dir, ROI0 + '.nii')):
+            ROI0_list = glob.glob(os.path.join(corrected_ROI_dir, ROI0 + '.nii'))
+        if os.path.exists(os.path.join(corrected_ROI_dir, ROI1 + '.nii')):
+            ROI1_list = glob.glob(os.path.join(corrected_ROI_dir, ROI1 + '.nii'))
 
         # create an empty list for both ROIs. For each ROI we have at least 2 nifti files (for each hemisphere)
         # Some are combined (like V1d and V1v resulting in 4 nifti files). We take all files and add them up
@@ -73,42 +81,40 @@ for roi0, ROI0 in enumerate (all_ROIs[:-1]):
 
         # read in the nifti files for the first ROI 
         for part in ROI0_list:
-            #print ('Reading in {}\n'.format(part))
             R0_mask_nii = nib.load(part)
             mask_img = R0_mask_nii.get_fdata()
             mask_img = np.asarray(mask_img)
-            ROI0_matrix = np.add(ROI0_matrix,mask_img)
+            ROI0_matrix = np.add(ROI0_matrix, mask_img)
 
         # read in the nifti files for the first ROI 
         for part in ROI1_list:
-            #print ('Reading in {}\n'.format(part))
             R1_mask_nii = nib.load(part)
             mask_img = R1_mask_nii.get_fdata()
             mask_img = np.asarray(mask_img)
-            ROI1_matrix = np.add(ROI1_matrix,mask_img)
+            ROI1_matrix = np.add(ROI1_matrix, mask_img)
 
 
         # convert into boolian matrix
         ROI0_matrix = ROI0_matrix>0
         ROI1_matrix = ROI1_matrix>0
-        print ('Number of Voxels in {}: {}'.format(ROI0, ROI0_matrix.sum()))
-        print ('Number of Voxels in {}: {}'.format(ROI1, ROI1_matrix.sum()))
+        print('Number of Voxels in {}: {}'.format(ROI0, ROI0_matrix.sum()))
+        print('Number of Voxels in {}: {}'.format(ROI1, ROI1_matrix.sum()))
         
         # look for overlapping voxels
         overlap = np.bitwise_and(ROI0_matrix,ROI1_matrix)
         if overlap.sum() == 0:
-            print('{} and {} do not have any overlapping voxels.\n Continue with the next ROI'.format(ROI0,ROI1))
+            print('{} and {} do not have any overlapping voxels.\n Continue with the next ROI'.format(ROI0, ROI1))
             # Create new clean ROI mask
             # first convert to a form needed
             ROI_mask0 = nib.Nifti1Image(ROI0_matrix.astype(float), R0_mask_nii.affine)
             ROI_mask1 = nib.Nifti1Image(ROI1_matrix.astype(float), R1_mask_nii.affine)
             # second, write to new location
-            nib.save(ROI_mask0, os.path.join(corrected_ROI_dir,ROI0 + '.nii'))
-            nib.save(ROI_mask1, os.path.join(corrected_ROI_dir,ROI1 + '.nii'))
+            nib.save(ROI_mask0, os.path.join(corrected_ROI_dir, ROI0 + '.nii'))
+            nib.save(ROI_mask1, os.path.join(corrected_ROI_dir, ROI1 + '.nii'))
             continue
             
         else:
-            print ('{} and {} do have {} overlapping voxels.\n These will now be assigned'.format(ROI0,ROI1,overlap.sum()))
+            print('{} and {} do have {} overlapping voxels.\n These will now be assigned'.format(ROI0, ROI1, overlap.sum()))
         
 
         # set voxels tha overlap to False in both ROIs
@@ -117,48 +123,48 @@ for roi0, ROI0 in enumerate (all_ROIs[:-1]):
         ROI1_matrix[indices_of_interest] = False
 
         # Combine both ROIs in one matrix and create a label matrix containing the labeling values for the ROIs
-        combined_ROIs = np.add(ROI0_matrix,ROI1_matrix)
+        combined_ROIs = np.add(ROI0_matrix, ROI1_matrix)
         train_data = np.where(combined_ROIs)
-        label = np.zeros_like(combined_ROIs,dtype=int)
+        label = np.zeros_like(combined_ROIs, dtype=int)
         label[np.where(ROI0_matrix)] = 1
         label[np.where(ROI1_matrix)] = 2
 
         # cut off all False and 0 values
         label = label[label>0]
 
-        # np.where returns a tuple and we need an array
+        # np.where returns a tuple, and we need an array
         train_data_arr = np.asarray(train_data)
 
         # iniciate the classifier with k=10 and weight the distance
         my_knn = KNeighborsClassifier(n_neighbors=10, weights="distance")
         # fit the classifier on the unambiguous data points (transposing the array is necessary)
-        my_knn.fit(train_data_arr.T,label)
+        my_knn.fit(train_data_arr.T, label)
 
         # get the ambiguous datapoints
         test_data = np.where(overlap)
         # again turn into numpy array
         test_data_arr = np.asarray(test_data)
         # let the classifier predict the right labels for the ambiguous datapoints (transposing is necessary)
-        result=my_knn.predict(test_data_arr.T)
+        result = my_knn.predict(test_data_arr.T)
         # labels are '1' and '2' by logical comparison we get false values for ROI0 and true values for ROI1
-        result=result>1
+        result = result>1
 
         # set the ambiguous values right
-        ROI0_matrix[test_data]= ~result
-        ROI1_matrix[test_data]= result
+        ROI0_matrix[test_data] = ~result
+        ROI1_matrix[test_data] = result
         
-        overlap = np.bitwise_and(ROI0_matrix,ROI1_matrix)
+        overlap = np.bitwise_and(ROI0_matrix, ROI1_matrix)
         if overlap.sum() == 0:
             # Create new clean ROI mask
             # first convert to a form needed
             ROI_mask0 = nib.Nifti1Image(ROI0_matrix.astype(float), R0_mask_nii.affine)
             ROI_mask1 = nib.Nifti1Image(ROI1_matrix.astype(float), R1_mask_nii.affine)
             # second, write to new location
-            nib.save(ROI_mask0, os.path.join(corrected_ROI_dir,ROI0 + '.nii'))
-            nib.save(ROI_mask1, os.path.join(corrected_ROI_dir,ROI1 + '.nii'))
-            print('Assigning was successful. {} and {} do not have any overlaying voxels anymore.'.format(ROI0,ROI1))
+            nib.save(ROI_mask0, os.path.join(corrected_ROI_dir, ROI0 + '.nii'))
+            nib.save(ROI_mask1, os.path.join(corrected_ROI_dir, ROI1 + '.nii'))
+            print('Assigning was successful. {} and {} do not have any overlaying voxels anymore.'.format(ROI0, ROI1))
             continue
             
         else:
-            print ('Something went wrong. {} and {} still have {} overlapping voxels.\n Abborting here'.format(ROI0,ROI1,overlap.sum))
-            raise Exception ('Abborted!')
+            print('Something went wrong. {} and {} still have {} overlapping voxels.\n Aborting here'.format(ROI0, ROI1, overlap.sum))
+            raise Exception('Aborted!')
