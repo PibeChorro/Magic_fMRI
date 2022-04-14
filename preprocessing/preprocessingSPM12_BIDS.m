@@ -90,8 +90,8 @@ DICOMsExtensions = {'**.IMA','**.ima'}; % extension you care about
 %% Decide what to do
 %..............................WHAT TO DO.................................%
 do.overwrite        = 1;
-do.realignment      = 0; % 1 = realigning and unwarp;
-do.sliceTimeCorr    = 0; % 1 = slice time correction (using slice TIMES); 
+do.realignment      = 1; % 1 = realigning and unwarp;
+do.sliceTimeCorr    = 1; % 1 = slice time correction (using slice TIMES); 
 do.coregistration   = 'auto'; % 'manual' or 'auto';
 do.segmentation     = 1;
 do.normalisation    = 1; 
@@ -113,7 +113,7 @@ pipelineName    = 'spm12-preproc_nordic';
 subNames        = cellstr(spm_select('List', rawDir, 'dir',['^' subPrefix]));
 
 %% start to perform the preprocessing
-for ss = 1%:length(subNames) % For all subjects do each ...
+for ss = 2:length(subNames) % For all subjects do each ...
     % get the unprocessed niftis
     rawSubDir       = fullfile(derivativesDir, 'nordic' ,subNames{ss});
     rawSubFuncDir   = fullfile(rawSubDir,'func');

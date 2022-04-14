@@ -37,14 +37,19 @@ subNames            = spm_select('List', rawDir, 'dir', 'sub-');
 subNames            = cellstr(subNames);
 
 ARG.magnitude_only = 1;
-for s = 1
+for s = 2:length(subNames)
     rawSubDir       = fullfile(rawDir,subNames{s});
     rawSubFuncDir   = fullfile(rawSubDir,'func');
-    outputDir       = fullfile(destDir,subNames{s});
+    outputDir       = fullfile(destDir,subNames{s},'func');
     runs            = cellstr(spm_select('List', rawSubFuncDir, '_bold.nii')); 
     numRuns         = length(runs); 
     if ~isfolder(outputDir)
         mkdir(outputDir);
+    end
+    [success,message] = copyfile(fullfile(rawSubDir, 'anat'),...
+        fullfile(destDir, subNames{s}, 'anat'));
+    if ~success
+            warning(message)
     end
     
     cd(outputDir)
