@@ -113,7 +113,7 @@ pipelineName    = 'spm12-preproc_nordic';
 subNames        = cellstr(spm_select('List', rawDir, 'dir',['^' subPrefix]));
 
 %% start to perform the preprocessing
-for ss = 2:length(subNames) % For all subjects do each ...
+for ss = 3:length(subNames) % For all subjects do each ...
     % get the unprocessed niftis
     rawSubDir       = fullfile(derivativesDir, 'nordic' ,subNames{ss});
     rawSubFuncDir   = fullfile(rawSubDir,'func');

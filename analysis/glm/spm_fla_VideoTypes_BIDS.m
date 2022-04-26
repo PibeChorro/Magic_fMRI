@@ -82,7 +82,7 @@ end
 softwareName        = 'spm12';              % software used to create preprocessed data
 
 % specify the name of the analysis pipeline
-analysisPipeline    = 'spm12-fla';          % how is the folder named that contains first level results
+analysisPipeline    = 'spm12-fla_nordic';          % how is the folder named that contains first level results
 brainMask           = 'WholeBrain_24MP';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';         % Magic, Control and Surprise videos are one regressor each (Response as well, but that is less important)
 smoothKernelSize	= 6;                    % in mm
@@ -97,7 +97,7 @@ DICOMsubNames       = spm_select('List', sourceDir, 'dir', ['^' DICOMprefix]);  
 DICOMsubNames       = cellstr(DICOMsubNames);                                   % cellstring format is needed for spm
 
 % Get name, location and number of preprocessed subjects
-pipelineName        = 'spm12-preproc';                                                  % how is the folder named that contains preprocessed data
+pipelineName        = 'spm12-preproc_nordic';                                                  % how is the folder named that contains preprocessed data
 realignedDir        = fullfile(derivesDir, softwareName, pipelineName, 'realigned');    % needed for realignment files as regressors of no interest
 if smoothKernelSize == 0
     destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, [smoothKernelSpace 'space']);  % where all the results of the TWO GLMs are stored

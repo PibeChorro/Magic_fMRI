@@ -87,7 +87,7 @@ end
 %% Data locations 
 softwareName        = 'spm12';  
 % get the data from the first level analysis pipeline you want
-pipelineName        = 'spm12-fla';
+pipelineName        = 'spm12-fla_nordic';
 brainMask           = 'WholeBrain_24MP';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';
 smoothKernelSize	= 6;   % in mm
@@ -98,7 +98,7 @@ flaDir              = fullfile(derivesDir, softwareName, pipelineName, brainMask
 wholeVideoGLMName   = 'WholeVideo';
 specialMomentGLMName= 'SpecialMoment';
 % specify the name of the processing pipeline
-analysisPipeline    = 'spm12-sla';
+analysisPipeline    = 'spm12-sla_nordic';
 
 %% create a folder that contains the results of the second level analysis
 
