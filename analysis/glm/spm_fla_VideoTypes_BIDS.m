@@ -83,7 +83,7 @@ softwareName        = 'spm12';              % software used to create preprocess
 
 % specify the name of the analysis pipeline
 analysisPipeline    = 'spm12-fla';          % how is the folder named that contains first level results
-brainMask           = 'WholeBrain_24MP';         % whole brain or ROI
+brainMask           = 'WholeBrain_24MP_WM2_CSF2_GS';         % whole brain or ROI
 conditionsAnalyzed  = 'VideoTypes';         % Magic, Control and Surprise videos are one regressor each (Response as well, but that is less important)
 smoothKernelSize	= 6;                    % in mm
 smoothKernelSpace   = 'mni';                % mni or native (mni makes more sense, native rather for explorative analysis... maybe)
@@ -99,6 +99,7 @@ DICOMsubNames       = cellstr(DICOMsubNames);                                   
 % Get name, location and number of preprocessed subjects
 pipelineName        = 'spm12-preproc';                                                  % how is the folder named that contains preprocessed data
 realignedDir        = fullfile(derivesDir, softwareName, pipelineName, 'realigned');    % needed for realignment files as regressors of no interest
+fmriprepDir         = fullfile(derivesDir, 'fmriprep-21.0.1');
 if smoothKernelSize == 0
     destDir = fullfile (derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, [smoothKernelSpace 'space']);  % where all the results of the TWO GLMs are stored
     if strcmp(smoothKernelSpace,'native')
@@ -137,7 +138,7 @@ do.loadlog          = 1; % load LOG files!
 do.estimate         = 1;
 do.DefContrasts     = 1;
 % Which model to do
-do.wholeVideo       = 1;
+do.wholeVideo       = 0;
 do.specialMoment    = 1;
 
 
@@ -157,7 +158,7 @@ fla.numConditions   = length(fla.conditionNames);
 numMag              = 6;
 numCon              = 6;
 numSur              = 1;
-numRaPara           = 24; % default number of realignment parameter, in model estimation overwritten but still 24
+numRaPara           = 24; % default number of realignment parameter, in model estimation overwritten but still 26
 % how many blocks we had
 numBlocks           = 3;
 % should the movement be used as regressors of no interest
@@ -202,7 +203,7 @@ for s = 1:length(subNames)
         matlabbatch{1}.spm.stats.fmri_spec.cvi              = 'AR(1)';
         
         %% Get the realigment files
-        AlignmentFiles = spm_select('FPList',realignedDataDir,'^rp_.*.txt');
+        AlignmentFiles  = spm_select('FPList',realignedDataDir,'^rp_.*.txt');
         
         % Load .mat files that contain condition information, such as
         % condition names, onsets, offsets, etc.
@@ -249,21 +250,54 @@ for s = 1:length(subNames)
                     'rp13'; 'rp14'; 'rp15';...  % translation square
                     'rp16'; 'rp17'; 'rp18';...  % rotation square
                     'rp19'; 'rp20'; 'rp21';...  % translation 1st derivative sqaure
-                    'rp22'; 'rp23'; 'rp24'      % rotation 1st derivative square
+                    'rp22'; 'rp23'; 'rp24';...  % rotation 1st derivative square
                     ];
                 numRaPara = length(raParamNames);
                 
                 % Load alignment parameters
-                raParamValues       = load(AlignmentFiles(r,:));    % get realignment parameters
+                raParamValues           = load(AlignmentFiles(r,:));    % get realignment parameters
+                
                 [~, raDeriValues]   = gradient(raParamValues);      % the first return value is the derivative along x axis
                 nuis                = zscore([raParamValues raDeriValues]); 
                 quadterms           = nuis.^ 2;
+
+                % load fmriprep confound timeseries tsv file
+                fmriprepFile        = cellstr(spm_select('FPList',fullfile(fmriprepDir,subNames{s},'func'),strcat('_run-', string(r), '_desc-confounds_timeseries.tsv')));
+                [vals,heads, ~]     = tsvread(fmriprepFile{1});
+                confountTable       = array2table(vals(2:end,:));
+                confountTable.Properties.VariableNames=heads;
                 all_raParams        = [nuis zscore(quadterms)];
                 % Add realignment parameters as regressors of no interest.
                 for P = 1:length (raParamNames)
                     matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(P).name = raParamNames(P,:);
                     matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(P).val  = all_raParams(:,P);
                 end
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'CSF';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = confountTable.csf;
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'CSF_deriv';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = gradient(confountTable.csf);
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'CSF_pow2';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = confountTable.csf_power2;
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'CSF_deriv_pow2';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = gradient(confountTable.csf_power2);
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'WM';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = confountTable.white_matter;
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'WM_deriv';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = gradient(confountTable.white_matter);
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'WM_pow2';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = confountTable.white_matter_power2;
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'WM_deriv_pow2';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = gradient(confountTable.white_matter_power2);
+
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end+1).name = 'globalMean';
+                matlabbatch{1}.spm.stats.fmri_spec.sess(r).regress(end).val  = confountTable.global_signal;
             end
         end
         
@@ -510,33 +544,33 @@ for s = 1:length(subNames)
             };
         
         % Contrast values
-        %       PreRevelation Magic Control Surprise    Response    Realignment             PostRevelation  Magic videos    Control Surprise    Response   Realignment
-        C1 = repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C2 = repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C3 = repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C4 = repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C5 = repmat ([repmat([1      0      0           0           zeros(1,numRaPara)], 1,2)       repmat([-1              0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C6 = repmat ([repmat([-1     0      0           0           zeros(1,numRaPara)], 1,2)       repmat([1               0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C7 = repmat ([repmat([1      0     -1           0           zeros(1,numRaPara)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C8 = repmat ([repmat([-1     0      1           0           zeros(1,numRaPara)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C9 = repmat ([repmat([0     -1      1           0           zeros(1,numRaPara)], 1,2)       repmat([0               -1      1           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C10= repmat ([repmat([0      1      -1          0           zeros(1,numRaPara)], 1,2)       repmat([0               1       -1          0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C11= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C12= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C13= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)], 1,2)       repmat([1               0       -1          0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C14= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)], 1,2)       repmat([-1              0       1           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C15= repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        C16= repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
-        %   FirstRun Magic  Control Surprise    Response    Realignment     SecondRun   Magic   Control Surprise    Response    Realignment Postrevelation  Magic   Control Surprise    Response    Realignment
-        C17= repmat ([1     0       0           0           zeros(1,numRaPara)          -1      0       0           0           zeros(1,numRaPara) repmat([0       0       0           0           zeros(1,numRaPara)], 1,2)],1,numBlocks);
+        %       PreRevelation Magic Control Surprise    Response    Realignment         CSF WM             PostRevelation  Magic videos    Control Surprise    Response   Realignment  
+        C1 = repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C2 = repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C3 = repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C4 = repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C5 = repmat ([repmat([1      0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([-1              0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C6 = repmat ([repmat([-1     0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([1               0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C7 = repmat ([repmat([1      0     -1           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C8 = repmat ([repmat([-1     0      1           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               0       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C9 = repmat ([repmat([0     -1      1           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               -1      1           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C10= repmat ([repmat([0      1      -1          0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([0               1       -1          0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C11= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C12= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C13= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([1               0       -1          0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C14= repmat ([repmat([0      0      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([-1              0       1           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C15= repmat ([repmat([1     -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([-1              1       0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        C16= repmat ([repmat([-1     1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)       repmat([1               -1      0           0           zeros(1,numRaPara)  zeros(1,9)], 1,2)], 1, numBlocks);
+        %   FirstRun Magic  Control Surprise    Response    Realignment         CSF WM  SecondRun   Magic   Control Surprise    Response    Realignment Postrevelation  Magic   Control Surprise    Response    Realignment
+        C17= repmat ([1     0       0           0           zeros(1,numRaPara)  zeros(1,9)       -1      0       0           0           zeros(1,numRaPara) zeros(1,9) repmat([0       0       0           0           zeros(1,numRaPara) zeros(1,9)], 1,2)],1,numBlocks);
         %   FirstRun Magic  Control Surprise    Response    Realignment SecondRun   Magic   Control Surprise    Response    Realignment   ThirdRun  Magic   Control Surprise    Response    Realignment FourthRun   Magic   Control Surprise    Response    Realignment
-        C18= repmat ([0     0       0           0           zeros(1,numRaPara)      1       0       0           0           zeros(1,numRaPara)      -1      0       0           0           zeros(1,numRaPara)      0       0       0           0       	zeros(1,numRaPara)],1,numBlocks);
+        C18= repmat ([0     0       0           0           zeros(1,numRaPara) zeros(1,9)     1       0       0           0           zeros(1,numRaPara) zeros(1,9)    -1      0       0           0           zeros(1,numRaPara) zeros(1,9)    0       0       0           0       	zeros(1,numRaPara) zeros(1,9)],1,numBlocks);
         %       PreRevelation Magic videos  Control Surprise    Response    Realignment             PostRevelation  Magic videos    Control Surprise    Response   Realignment
-        C19= repmat ([repmat([0              1      0           0           zeros(1,numRaPara)], 1,2)       repmat([0              -1       0           0           zeros(1,numRaPara)], 1,2)], 1, numBlocks);
+        C19= repmat ([repmat([0              1      0           0           zeros(1,numRaPara) zeros(1,9)], 1,2)       repmat([0              -1       0           0           zeros(1,numRaPara) zeros(1,9)], 1,2)], 1, numBlocks);
 
         %                       Magic No Magic    Surprise    Response    Realigment
-        C20= repmat (repmat([   1     1           1           -3          zeros(1,numRaPara)],1,4),1,numBlocks);
-        C21= repmat (repmat([   -1    -1          -1           3          zeros(1,numRaPara)],1,4),1,numBlocks);
+        C20= repmat (repmat([   1     1           1           -3          zeros(1,numRaPara) zeros(1,9)],1,4),1,numBlocks);
+        C21= repmat (repmat([   -1    -1          -1           3          zeros(1,numRaPara) zeros(1,9)],1,4),1,numBlocks);
         % Combine all Contrasts in one Matrix
         Contrasts = [C1; C2; C3; C4; C5; C6; C7; C8; C9; C10; C11; C12; C13; C14; C15; C16; C17; C18; C19; C20; C21];
         
