@@ -251,8 +251,8 @@ try:
             'pACC', 'mACC', 'aACC', '8BM',  # Glasser 5d,6d,4p (ACC LR)
             'AI', 'AVI',  # Glasser 7d,8d (anterior insula LR)
             'IFS', '45', 'BA46',  # Glasser 3d, 3p (inferior frontal gyrus, pars triangularis L)
-            'BA8', 'BA9'  # Glasser 2p (middle frontal gyrus/DLPFC L)
-            '3rd-ventricle'
+            'A8', 'BA9'  # Glasser 2p (middle frontal gyrus/DLPFC L)
+            #'3rd-ventricle'
           ]
     
     # What should be predicted

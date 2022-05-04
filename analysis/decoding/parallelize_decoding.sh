@@ -15,11 +15,11 @@ FSDATA=$HOME/Documents/Magic_fMRI/DATA/MRI/derivatives/freesurfer
 for subject in ${FSDATA}/sub-*
 do
 	x=$(basename "$subject")
-	cores=12
+	cores=10
 	echo $x
 	qsub -l nodes=1:ppn=$cores \
 		-l mem=6 \
-		-l walltime=144:00:00 \
-		-F "--sub $x --runs post --over tricks --perms 100 --kernels $cores" \
-		decode_magic_effects_searchlight.py -q shared
+		-l walltime=4:00:00:00 \
+		-F "--sub $x --runs post --over tricks --perms 1000 --kernels $cores" \
+		decode_magic_effects.py -q shared
 done
