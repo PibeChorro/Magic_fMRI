@@ -83,7 +83,7 @@ parser.add_argument("--sub", "-s", default='sub-01')         # subject
 # parse the arguments to a parse-list(???)
 ARGS = parser.parse_args()
 # assign values 
-SUB             = ARGS.sub
+SUB = ARGS.sub
 
 ################################################
 # VARIABLES FOR PATH SELECTION AND DATA ACCESS #
@@ -121,10 +121,10 @@ for ET in ET_files:
     # miss some data files
     run = list(map(int, re.findall(r'\d+', os.path.basename(ET))))[1]
     
-    # read in the coresponding event file depending on run number, because
+    # read in the corresponding event file depending on run number, because
     # some subjects miss some ET data, so the nth ET file does not necessarily
-    # need to be the coresponding event file
-    event_file = glob.glob(os.path.join(RAW_DIR,SUB,'func',
+    # need to be the corresponding event file
+    event_file = glob.glob(os.path.join(RAW_DIR, SUB, 'func',
                                         '*run-{:02d}_events.tsv'.format(run)))
     try:
         event_df = pd.read_csv(filepath_or_buffer=event_file[0],sep='\t')
@@ -137,28 +137,39 @@ for ET in ET_files:
     # Cut off all data, that exceeds the last trial
     ET_data = ET_data[ET_data.TimeStamp<event_df.onset.iloc[-1]+
                       event_df.duration.iloc[-1]]
+    # create new empty rows to store the information if the subject performs a blink or a saccade
+    ET_data['in_blink'] = np.zeros_like(ET_data.X_Coord)
+    ET_data['in_saccade'] = np.zeros_like(ET_data.X_Coord)
     frame_width = frame_dim[2]
     frame_height = frame_dim[3]
     
-    # set all ET data values during blinks (+- 150ms) to np.nan
-    for b_s,b_e in zip(blinks.Start,blinks.End):
-        ET_data.Diameter[(ET_data.TimeStamp>b_s-margin) & (ET_data.TimeStamp<b_e+margin)] = np.nan
-        ET_data.X_Coord[(ET_data.TimeStamp>b_s-margin) & (ET_data.TimeStamp<b_e+margin)] = np.nan
-        ET_data.Y_Coord[(ET_data.TimeStamp>b_s-margin) & (ET_data.TimeStamp<b_e+margin)] = np.nan
+    # set all ET data values during blinks (+- 150ms) to np.nan and ET in_blink to 1
+    for b_s, b_e in zip(blinks.Start, blinks.End):
+        ET_data.Diameter[(ET_data.TimeStamp > b_s-margin) & (ET_data.TimeStamp < b_e+margin)] = np.nan
+        ET_data.X_Coord[(ET_data.TimeStamp > b_s-margin) & (ET_data.TimeStamp < b_e+margin)] = np.nan
+        ET_data.Y_Coord[(ET_data.TimeStamp > b_s-margin) & (ET_data.TimeStamp < b_e+margin)] = np.nan
+        ET_data.in_blink[(ET_data.TimeStamp > b_s-margin) & (ET_data.TimeStamp < b_e+margin)] = 1
+
+    # set ET in_saccade to 1
+    for s_s, s_e in zip(saccades.Start, saccades.End):
+        ET_data.in_saccade[(ET_data.TimeStamp > s_s - margin) & (ET_data.TimeStamp < s_e + margin)] = 1
+    # all entries where we measured a blink must not be a saccade. However, before a blink a saccade is detected, since
+    # there is a fast change in pupil detection due to the closing eyelid
+    ET_data.in_saccade[ET_data.in_blink == 1] = 0
 
     # now interpolate them
-    ET_data.Diameter.interpolate(method ='linear',
+    ET_data.Diameter.interpolate(method='linear',
                                  limit=int(interpolation_limit*sample_rate), 
                                  limit_direction='both',
                                  inplace=True)
-    ET_data.X_Coord.interpolate(method ='linear',
-                                 limit=int(interpolation_limit*sample_rate), 
-                                 limit_direction='both',
-                                 inplace=True)
+    ET_data.X_Coord.interpolate(method='linear',
+                                limit=int(interpolation_limit*sample_rate),
+                                limit_direction='both',
+                                inplace=True)
     ET_data.Y_Coord.interpolate(method ='linear',
-                                 limit=int(interpolation_limit*sample_rate), 
-                                 limit_direction='both',
-                                 inplace=True)
+                                limit=int(interpolation_limit*sample_rate),
+                                limit_direction='both',
+                                inplace=True)
     
     # filter stuff
     high_pass_cof_sample    = high_pass_freq / (sample_rate/2)
@@ -173,7 +184,7 @@ for ET in ET_files:
     # iterate over trials and filter data within a trial
     for idx,tr in event_df.iterrows():
         tmp_diameter = ET_data.Diameter[(ET_data.TimeStamp>=tr.onset) & 
-                                        (ET_data.TimeStamp<tr.onset+tr.duration)]
+                                        (ET_data.TimeStamp < tr.onset+tr.duration)]
         tmp_diameter_bp = signal.filtfilt(bbp, abp, tmp_diameter)
         diameter_filtered.extend(tmp_diameter_bp)
 
@@ -182,9 +193,9 @@ for ET in ET_files:
     # normalization - mean over trials, standard deviation over session (run)
     diameter_std = ET_data.Diameter_filtered.std() 
     diameter_normalized = []
-    for idx,tr in event_df.iterrows():
+    for idx, tr in event_df.iterrows():
         tmp_diameter = ET_data.Diameter_filtered[(ET_data.TimeStamp>=tr.onset) & 
-                                        (ET_data.TimeStamp<tr.onset+tr.duration)]
+                                        (ET_data.TimeStamp < tr.onset+tr.duration)]
         tmp_diameter -= np.nanmean(tmp_diameter)
         tmp_diameter /= diameter_std
         diameter_normalized.extend(tmp_diameter)
@@ -208,8 +219,8 @@ for ET in ET_files:
         os.makedirs(save_dir)
     ET_data.to_csv(path_or_buf=os.path.join(save_dir,file_name), 
                    sep='\t',
-                   na_rep = 'n/a',
-                   index = False)
+                   na_rep='n/a',
+                   index=False)
     
 ##################
 # WRITE LOG FILE #
@@ -232,5 +243,5 @@ except git.InvalidGitRepositoryError:
     git_hash = 'not-found'
 
 # create a log file, that saves some information about the run script
-with open(os.path.join(save_dir,'ET_preproc-logfile.txt'), 'w+') as writer:
+with open(os.path.join(save_dir, 'ET_preproc-logfile.txt'), 'w+') as writer:
     writer.write('Codeversion: {} \n'.format(git_hash))
