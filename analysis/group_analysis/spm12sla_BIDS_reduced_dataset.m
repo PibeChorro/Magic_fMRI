@@ -98,11 +98,11 @@ flaDir              = fullfile(derivesDir, softwareName, pipelineName, brainMask
 wholeVideoGLMName   = 'WholeVideo';
 specialMomentGLMName= 'SpecialMoment';
 % specify the name of the processing pipeline
-analysisPipeline    = 'spm12-sla';
+analysisPipeline    = 'spm12-sla_reduced_dataset';
 
 %% create a folder that contains the results of the second level analysis
 
-secLevelDir = fullfile(derivesDir, softwareName, analysisPipeline, brainMask, conditionsAnalyzed, smoothnessDir);
+secLevelDir = fullfile(derivesDir, softwareName, analysisPipeline, [brainMask 'reduced'], conditionsAnalyzed, smoothnessDir);
 if ~isfolder(secLevelDir)
     mkdir(secLevelDir)
 end
@@ -121,14 +121,17 @@ formatSpec = '%04i';
 
 folders = dir(fullfile(flaDir, specialMomentGLMName,'sub-*'));
 subNames = {folders(:).name}; 
+allSubjects = 1:24;
+excludedSubjects = [7,9,11,19,22];
+includedSubjects = setdiff(allSubjects,excludedSubjects,'stable');
 
 % load in one SPM.mat file to read out the contrasts
 load(fullfile(flaDir, specialMomentGLMName,subNames{1},'SPM.mat'));
-nContrasts = length(SPM.xCon);
+ContrastsToInvestigate = [8,9,14]; % Surprise vs Magic Before, Surprise vs Control and Surprise vs Magic After
 
 %% The actual second level analysis
 % Iterate over all contrasts
-for C = 1:nContrasts 
+for C = ContrastsToInvestigate 
 
     if do.SpecifyDesign
         %% specify general analysis parameter
@@ -146,7 +149,7 @@ for C = 1:nContrasts
             dataDir         = fullfile(flaDir, wholeVideoGLMName);
             contrastsDirs   = {};
 
-            for s = 1:length(subNames)
+            for s = includedSubjects
 
                 currentDir              = fullfile(dataDir,subNames{s});
                 contrastsDirs{end+1}    = fullfile(currentDir,['con_' num2str(C,formatSpec) '.nii']);
@@ -165,7 +168,7 @@ for C = 1:nContrasts
             dataDir         = fullfile(flaDir, specialMomentGLMName);
             contrastsDirs   = {};
 
-            for s = 1:length(subNames)
+            for s = includedSubjects
 
                 currentDir = fullfile(dataDir,subNames{s});
                 contrastsDirs{end+1} = fullfile(currentDir,['con_' num2str(C,formatSpec) '.nii']);
