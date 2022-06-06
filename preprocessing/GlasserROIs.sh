@@ -25,7 +25,7 @@ docker run \
 --tty \
 freesurfer/freesurfer:7.1.1
 
-mkdir $SUBJECTS_DIR/$SUB/ROIs
+docker exec $FS_CONTAINER_NAME mkdir $SUBJECTS_DIR/$SUB/GlasserROIs
 
 ###########################################
 # MERGE THE DIFFERENT LABELS IF NECESSARY #
@@ -234,21 +234,21 @@ do
   docker exec --workdir $SUBJECTS_DIR $FS_CONTAINER_NAME \
     mri_label2vol --label $SUBJECTS_DIR/$SUB/label/lh.L_${roi}_ROI.label \
     --temp $meanNiFTI \
-    --reg $SUBJECTS_DIR/$SUB/tkregister_${SUB}.dat \
+    --reg $SUBJECTS_DIR/$SUB/bbregister_${SUB}.dat \
     --fillthresh 0 \
     --proj frac 0 1 0.1 \
     --subject $SUB \
     --hemi lh \
-    --o $SUBJECTS_DIR/$SUB/ROIs/lh.L_Glasser_${roi}.nii
+    --o $SUBJECTS_DIR/$SUB/GlasserROIs/lh.L_Glasser_${roi}.nii
   docker exec --workdir $SUBJECTS_DIR $FS_CONTAINER_NAME \
     mri_label2vol --label $SUBJECTS_DIR/$SUB/label/rh.R_${roi}_ROI.label \
     --temp $meanNiFTI \
-    --reg $SUBJECTS_DIR/$SUB/tkregister_${SUB}.dat \
+    --reg $SUBJECTS_DIR/$SUB/bbregister_${SUB}.dat \
     --fillthresh 0 \
     --proj frac 0 1 0.1 \
     --subject $SUB \
     --hemi rh \
-    --o $SUBJECTS_DIR/$SUB/ROIs/rh.R_Glasser_${roi}.nii
+    --o $SUBJECTS_DIR/$SUB/GlasserROIs/rh.R_Glasser_${roi}.nii
 done
 
 # second only convert left lateral labels
@@ -257,12 +257,12 @@ do
   docker exec --workdir $SUBJECTS_DIR $FS_CONTAINER_NAME \
     mri_label2vol --label $SUBJECTS_DIR/$SUB/label/lh.L_${roi}_ROI.label \
     --temp $meanNiFTI \
-    --reg $SUBJECTS_DIR/$SUB/tkregister_${SUB}.dat \
+    --reg $SUBJECTS_DIR/$SUB/bbregister_${SUB}.dat \
     --fillthresh 0 \
     --proj frac 0 1 0.1 \
     --subject $SUB \
     --hemi lh \
-    --o $SUBJECTS_DIR/$SUB/ROIs/lh.L_Glasser_${roi}.nii
+    --o $SUBJECTS_DIR/$SUB/GlasserROIs/lh.L_Glasser_${roi}.nii
 done
 
 docker stop $FS_CONTAINER_NAME
